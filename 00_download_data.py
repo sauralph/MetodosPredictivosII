@@ -3,6 +3,8 @@ from alpha_vantage.timeseries import TimeSeries
 import os
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
+import yfinance as yf
+
 
 # Your Alpha Vantage API key
 # Load API key from .env file
@@ -26,3 +28,17 @@ data['Close'].plot(title='Intraday Time Series for the SPY stock (1 min)')
 plt.show()
 # Save the dataframe as a parquet file
 data.to_parquet('spy_future.parquet')
+
+# Get intraday data for Eurostoxx 50 futures
+# The symbol for Eurostoxx 50 on Yahoo Finance is '^STOXX50E'
+data_esx = yf.download(tickers='^STOXX50E', interval='1m', period='5d')
+
+# Display the first few rows
+print(data_esx.head())
+
+# Plot the closing prices for Eurostoxx 50 futures
+data_esx['Close'].plot(title='Intraday Time Series for the Eurostoxx 50 futures (1 min)')
+plt.show()
+
+# Save the Eurostoxx 50 futures dataframe as a parquet file
+data_esx.to_parquet('eurostoxx50_future.parquet')
