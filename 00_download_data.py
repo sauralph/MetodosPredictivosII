@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import yfinance as yf
 
 
+
 # Your Alpha Vantage API key
 # Load API key from .env file
 load_dotenv('.env')
@@ -42,3 +43,10 @@ plt.show()
 
 # Save the Eurostoxx 50 futures dataframe as a parquet file
 data_esx.to_parquet('eurostoxx50_future.parquet')
+
+
+# Download EUR/USD FX data
+fx_data = yf.download('EURUSD=X', interval='1d')
+fx_data = fx_data[['Close']]
+fx_data.columns = ['EURUSD']
+fx_data.to_parquet('eur_to_usd.parquet')
