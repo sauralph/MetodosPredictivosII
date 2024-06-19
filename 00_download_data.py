@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import matplotlib.pyplot as plt
 import yfinance as yf
+import numpy as np
 
 
 
@@ -33,12 +34,38 @@ data.to_parquet('spy_future.parquet')
 # Get intraday data for Eurostoxx 50 futures
 # The symbol for Eurostoxx 50 on Yahoo Finance is '^STOXX50E'
 data_esx = yf.download(tickers='^STOXX50E', interval='1m', period='5d')
-
-# Display the first few rows
 print(data_esx.head())
 
-# Plot the closing prices for Eurostoxx 50 futures
-data_esx['Close'].plot(title='Intraday Time Series for the Eurostoxx 50 futures (1 min)')
+# Simulate volume data
+np.random.seed(42)  # For reproducibility
+n = len(data_esx)
+mean_volume = 1000 
+volume_noise = np.random.normal(0, 200, n)
+base_volume = np.full(n, mean_volume)
+simulated_volume = base_volume + np.cumsum(volume_noise)
+simulated_volume[simulated_volume < 0] = mean_volume
+hours = data_esx.index.hour
+daily_pattern = np.sin((hours - 8) * (np.pi / 8)) * 200 + mean_volume  # Arbitrary pattern
+
+# Combine the random walk and daily pattern
+final_volume = (simulated_volume + daily_pattern) / 2
+
+# Add the simulated volume to the dataframe
+data_esx['Volume'] = final_volume
+
+fig, ax1 = plt.subplots()
+ax1.set_xlabel('DateTime')
+ax1.set_ylabel('Close', color='tab:blue')
+ax1.plot(data_esx.index, data_esx['Close'], color='tab:blue')
+ax1.tick_params(axis='y', labelcolor='tab:blue')
+
+ax2 = ax1.twinx()
+ax2.set_ylabel('Volume', color='tab:green')
+ax2.plot(data_esx.index, data_esx['Volume'], color='tab:green')
+ax2.tick_params(axis='y', labelcolor='tab:green')
+
+fig.tight_layout()
+plt.title('Intraday Time Series for Eurostoxx 50 Index with Simulated Volume (1 min)')
 plt.show()
 
 # Save the Eurostoxx 50 futures dataframe as a parquet file
