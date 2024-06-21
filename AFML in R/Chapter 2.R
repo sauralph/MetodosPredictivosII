@@ -468,4 +468,45 @@ adf_test_result <- adf.test(aligned_data$Spread, alternative = "stationary")
 print(adf_test_result)
 
 
+# Section 2.4 -------------------------------------------------------------
 
+# Calculate rolling mean and Bollinger Bands
+window_size <- 50  # Set the rolling window size
+
+dollar_bars <- dollar_bars %>%
+  arrange(Time) %>%
+  mutate(
+    rolling_mean = rollmean(Close, window_size, fill = NA, align = "right"),
+    upper_band = rolling_mean * 1.05,
+    lower_band = rolling_mean * 0.95
+  )
+
+# Count the crossings
+dollar_bars <- dollar_bars %>%
+  mutate(
+    above_upper = ifelse(lag(Close) <= lag(upper_band) & Close > upper_band, 1, 0),
+    below_lower = ifelse(lag(Close) >= lag(lower_band) & Close < lower_band, 1, 0)
+  )
+
+crossings <- sum(dollar_bars$above_upper, na.rm = TRUE) + sum(dollar_bars$below_lower, na.rm = TRUE)
+
+# Print the number of crossings
+print(paste("Number of crossings: ", crossings))
+
+# Plot the series and Bollinger Bands
+plot(dollar_bars$Time, dollar_bars$Close, type = "l", col = "gray", 
+     main = "Close Prices with Bollinger Bands", xlab = "Time", ylab = "Price",
+     ylim = range(c(dollar_bars$upper_band,dollar_bars$lower_band),na.rm = T),
+     frame.plot = F)
+lines(dollar_bars$Time, dollar_bars$rolling_mean, col = "aquamarine4")
+lines(dollar_bars$Time, dollar_bars$upper_band, col = "indianred", lty="dashed")
+lines(dollar_bars$Time, dollar_bars$lower_band, col = "indianred",lty="dashed")
+legend("topright", legend = c("Close", "Rolling Mean", "Upper Band", "Lower Band"),
+       col = c("gray", "aquamarine4", "indianred", "indianred"),
+       border = NA,lty=c("solid","solid","dashed","dashed"))
+
+
+# Section (b) -------------------------------------------------------------
+
+cusum_events<-getTEvents(returns_zoo,h = .05)
+abline(v=cusum_events,col="indianred",lty="dashed")
