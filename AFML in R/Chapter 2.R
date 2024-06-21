@@ -107,7 +107,7 @@ plot(rolled$Time,rolled$rPrices,type="l")
 
 # Snippet 2.4 -------------------------------------------------------------
 
-getTEvents <- function(gRaw, h) {
+getTEvents <- function(gRaw, h=0.01) {
   tEvents <- c()
   sPos <- 0
   sNeg <- 0
@@ -140,5 +140,332 @@ plot(rolled$Time, rolled$rPrices, type = "l", col = "blue",
      main = "Precio Ajustado con eventos t", 
      xlab = "Fecha", ylab = "Precio Ajustado")
 abline(v = tEvents, col = "red", lwd = 2, lty = 2)
+
+
+# Excersises --------------------------------------------------------------
+
+
+# 2.1 ---------------------------------------------------------------------
+
+
+# Section a ---------------------------------------------------------------
+
+# Function to create tick bars
+create_tick_bars <- function(data, tick_size = 500) {
+  data$bar_id <- rep(1:ceiling(nrow(data) / tick_size), each = tick_size)[1:nrow(data)]
+  tick_bars <- data %>%
+    group_by(bar_id) %>%
+    summarise(Time = first(Time),
+              Open = first(Open),
+              Close = last(Close),
+              Volume = sum(Volume),
+              VWAP = sum(Close * Volume) / sum(Volume),
+              .groups = 'drop')
+  return(tick_bars)
+}
+
+# Function to create volume bars
+create_volume_bars <- function(data, volume_size = 1000) {
+  data$vol_cumsum <- cumsum(data$Volume)
+  volume_bars <- data %>%
+    group_by(bar_id = ceiling(vol_cumsum / volume_size)) %>%
+    summarise(Time = first(Time),
+              Open = first(Open),
+              Close = last(Close),
+              Volume = sum(Volume),
+              VWAP = sum(Close * Volume) / sum(Volume),
+              .groups = 'drop')
+  return(volume_bars)
+}
+
+# Function to create dollar bars
+create_dollar_bars <- function(data, dollar_size = 100000) {
+  data$dollar_cumsum <- cumsum(data$Volume * data$VWAP)
+  dollar_bars <- data %>%
+    group_by(bar_id = ceiling(dollar_cumsum / dollar_size)) %>%
+    summarise(Time = first(Time),
+              Open = first(Open),
+              Close = last(Close),
+              Volume = sum(Volume),
+              VWAP = sum(Close * Volume) / sum(Volume),
+              .groups = 'drop')
+  return(dollar_bars)
+}
+
+raw <- raw %>%
+  mutate(VWAP = cumsum(Close * Volume) / cumsum(Volume))
+
+
+# Example usage
+tick_bars <- create_tick_bars(raw)
+volume_bars <- create_volume_bars(raw)
+dollar_bars <- create_dollar_bars(raw)
+
+# Plotting functions
+plot_bars <- function(bars, title) {
+  plot(as.POSIXct(bars$Time), bars$Close, type = "l", col = "blue", main = title, xlab = "Time", ylab = "Close Price")
+}
+
+
+# Plot tick bars
+plot_bars(tick_bars, "Tick Bars Close Prices")
+
+# Plot volume bars
+plot_bars(volume_bars, "Volume Bars Close Prices")
+
+# Plot dollar bars
+plot_bars(dollar_bars, "Dollar Bars Close Prices")
+
+
+# Section b ---------------------------------------------------------------
+
+# Function to count weekly bars
+count_weekly_bars <- function(bars) {
+  bars$week <- floor_date(as.POSIXct(bars$Time), "week")
+  weekly_counts <- bars %>%
+    group_by(week) %>%
+    summarise(Count = n(), .groups = 'drop')
+  return(weekly_counts)
+}
+
+# Count weekly bars
+tick_weekly_counts <- count_weekly_bars(tick_bars)
+volume_weekly_counts <- count_weekly_bars(volume_bars)
+dollar_weekly_counts <- count_weekly_bars(dollar_bars)
+
+# Plot weekly bar counts
+plot_weekly_counts <- function(weekly_counts, title) {
+  ggplot(weekly_counts, aes(x = week, y = Count)) +
+    geom_line() +
+    labs(title = title, x = "Time", y = "Weekly Bar Count") +
+    theme_minimal()
+}
+
+plot_weekly_counts(tick_weekly_counts, "Tick Bars Weekly Count")
+plot_weekly_counts(volume_weekly_counts, "Volume Bars Weekly Count")
+plot_weekly_counts(dollar_weekly_counts, "Dollar Bars Weekly Count")
+
+
+# section c ---------------------------------------------------------------
+
+# Function to compute serial correlation
+compute_serial_correlation <- function(bars) {
+  returns <- diff(log(bars$Close))
+  return(cor(returns[-1], returns[-length(returns)]))
+}
+
+tick_serial_corr <- compute_serial_correlation(tick_bars)
+volume_serial_corr <- compute_serial_correlation(volume_bars)
+dollar_serial_corr <- compute_serial_correlation(dollar_bars)
+
+tick_serial_corr
+volume_serial_corr
+dollar_serial_corr
+
+# section d ---------------------------------------------------------------
+
+# Function to partition bars into monthly subsets and compute variance of returns
+compute_variance_of_variances <- function(bars) {
+  bars$Month <- floor_date(as.POSIXct(bars$Time), "month")
+  monthly_variances <- bars %>%
+    group_by(Month) %>%
+    summarise(Variance = var(diff(log(Close))), .groups = 'drop')
+  return(var(monthly_variances$Variance))
+}
+
+tick_var_of_vars <- compute_variance_of_variances(tick_bars)
+volume_var_of_vars <- compute_variance_of_variances(volume_bars)
+dollar_var_of_vars <- compute_variance_of_variances(dollar_bars)
+
+tick_var_of_vars
+volume_var_of_vars
+dollar_var_of_vars
+
+
+# section e ---------------------------------------------------------------
+
+library(tseries)
+
+# Function to apply Jarque-Bera test
+apply_jarque_bera_test <- function(bars) {
+  returns <- diff(log(bars$Close))
+  jb_test <- jarque.bera.test(returns)
+  print(jb_test)
+  return(jb_test$statistic)
+}
+
+tick_jb_stat <- apply_jarque_bera_test(tick_bars)
+volume_jb_stat <- apply_jarque_bera_test(volume_bars)
+dollar_jb_stat <- apply_jarque_bera_test(dollar_bars)
+
+tick_jb_stat
+volume_jb_stat
+dollar_jb_stat
+
+returns <- diff(log(tick_bars$Close))
+hist(returns)
+qqnorm(returns)
+qqline(returns)
+
+
+# 2.2 ---------------------------------------------------------------------
+
+# Function to determine BuySell using the tick rule
+determine_buy_sell <- function(prices) {
+  buy_sell <- numeric(length(prices))
+  buy_sell[1] <- 1  # Assume first trade is a buy
+  
+  for (i in 2:length(prices)) {
+    if (prices[i] > prices[i - 1]) {
+      buy_sell[i] <- 1
+    } else if (prices[i] < prices[i - 1]) {
+      buy_sell[i] <- -1
+    } else {
+      buy_sell[i] <- buy_sell[i - 1]
+    }
+  }
+  
+  return(buy_sell)
+}
+
+# Function to compute tick dollar imbalances
+compute_tick_dollar_imbalance <- function(data, window_size = 50) {
+  data <- data %>%
+    arrange(Time) %>%
+    mutate(BuySell = determine_buy_sell(Close),
+           BuyVolume = ifelse(BuySell == 1, Volume * Close, 0),
+           SellVolume = ifelse(BuySell == -1, Volume * Close, 0))
+  
+  # Compute rolling sums
+  data <- data %>%
+    mutate(RollingBuyVolume = rollapply(BuyVolume, width = window_size, FUN = sum, align = "right", fill = NA),
+           RollingSellVolume = rollapply(SellVolume, width = window_size, FUN = sum, align = "right", fill = NA))
+  
+  # Compute tick dollar imbalance
+  data <- data %>%
+    mutate(TickDollarImbalance = RollingBuyVolume - RollingSellVolume)
+  
+  return(data)
+}
+
+compute_serial_correlation(dollar_bars)
+dollar_imbalance_bars<-compute_tick_dollar_imbalance(raw)
+dollar_imbalance_bars_corr<-compute_serial_correlation(dollar_imbalance_bars)
+
+barplot(
+  c(tick_serial_corr, volume_serial_corr, dollar_serial_corr,dollar_imbalance_bars_corr),
+  names.arg = c("Tick Bars", "Volume Bars", "Dollar Bars","Dollar Imbalance"),
+  main = "Serial Correlation of Returns",
+  ylab = "Serial Correlation",
+  col = c("gray", "gray", "steelblue1","steelblue"),
+  border = F
+)
+
+
+# Excersise 2.3 -----------------------------------------------------------
+
+
+# Section (a) -------------------------------------------------------------
+
+eurostoxx50<-read_parquet("../Capitulo2/eurostoxx50_future.parquet")
+ex_rates<-read_parquet("../Capitulo2/eur_to_usd.parquet")
+tail(ex_rates)
+tail(eurostoxx50)
+
+# Convert Datetime columns to POSIXct if not already in that format
+eurostoxx50 <- eurostoxx50 %>%
+  mutate(Time = as.POSIXct(Datetime, format = "%Y-%m-%d %H:%M:%S"))
+
+eurostoxx50 <- eurostoxx50 %>%
+  mutate(Date = as.Date(Datetime))
+
+ex_rates <- ex_rates %>%
+  mutate(Date = as.Date(as.POSIXct(Date, format = "%Y-%m-%d %H:%M:%S")))
+
+# Merge the data frames on the datetime column
+merged_data <- eurostoxx50 %>%
+  left_join(ex_rates, by = "Date")
+
+merged_data <- merged_data %>%
+  filter(!is.na(EURUSD))
+
+converted_data <- merged_data %>%
+  mutate(Open_USD = Open * EURUSD,
+         High_USD = High * EURUSD,
+         Low_USD = Low * EURUSD,
+         Close_USD = Close * EURUSD)
+
+converted_data <- converted_data %>%
+  select(Datetime, Open_USD, High_USD, Low_USD, Close_USD, Volume)
+
+colnames(converted_data)[1:5]<-c("Time","Open","High","Low","Close")
+
+converted_data<-converted_data %>%
+  mutate(VWAP = cumsum(Close * Volume) / cumsum(Volume))
+
+eurostoxx50_dollar_bars<-create_dollar_bars(converted_data)
+
+# Function to adjust futures prices using ETF trick
+compute_omega_t <- function(futures_sp500, futures_eurostoxx50, roll_dates) {
+  omega_t <- numeric(length(roll_dates))
+  for (i in seq_along(roll_dates)) {
+    roll_date <- roll_dates[i]
+    
+    # Find the nearest dates in SP500 futures data
+    sp500_before_roll <- futures_sp500 %>% filter(Time <= roll_date) %>% tail(1)
+    sp500_after_roll <- futures_sp500 %>% filter(Time > roll_date) %>% head(1)
+    
+    # Find the nearest dates in Eurostoxx 50 futures data
+    eurostoxx50_before_roll <- futures_eurostoxx50 %>% filter(Time <= roll_date) %>% tail(1)
+    eurostoxx50_after_roll <- futures_eurostoxx50 %>% filter(Time > roll_date) %>% head(1)
+    
+    # Find the nearest dates in ETF data
+    etf_before_roll <- eurostoxx50_before_roll
+    etf_after_roll <- eurostoxx50_after_roll
+    
+    # Calculate the adjustment factor
+    adj_factor <- (etf_after_roll$Close / etf_before_roll$Close) /
+      (sp500_after_roll$Close / sp500_before_roll$Close)
+    
+    omega_t[i] <- adj_factor
+  }
+  return(omega_t)
+}
+
+euro_returns<-eurostoxx50 %>%
+  mutate(Returns = (Close - lag(Close)) / lag(Close))
+
+
+euro_returns_zoo <- zoo(euro_returns$Returns, order.by = euro_returns$Time)
+
+roll_dates_for_eurostoxx50<-getTEvents(euro_returns_zoo,h = 0.005)
+length(roll_dates_for_eurostoxx50)
+# Compute \(\hat{\omega}_t\) vector
+omega_t <- compute_omega_t(dollar_bars, eurostoxx50_dollar_bars, 
+                           roll_dates_for_eurostoxx50)
+
+# Print \(\hat{\omega}_t\) vector
+print(omega_t)
+
+
+# Section (b) -------------------------------------------------------------
+
+# Align the time series by Datetime
+aligned_data <- dollar_bars %>%
+  inner_join(eurostoxx50_dollar_bars, by = "Time", suffix = c("_sp500", "_eurostoxx"))
+
+aligned_data <- aligned_data %>%
+  mutate(Spread = Close_sp500 - Close_eurostoxx)
+
+aligned_data$Spread
+plot(aligned_data$Time, aligned_data$Spread, type = "l", col = "blue",
+     main = "S&P 500/Eurostoxx 50 Spread", xlab = "Datetime", ylab = "Spread (USD)")
+
+
+# Section (c) -------------------------------------------------------------
+
+adf_test_result <- adf.test(aligned_data$Spread, alternative = "stationary")
+print(adf_test_result)
+
 
 
