@@ -86,11 +86,83 @@ applyPtSlOnT1 <- function(close, events, ptSl) {
   return(result)
 }
 
-# Example usage
-# Assuming close is a data frame with date and close columns, and events is a data frame with date, t1, trgt, and side columns
-events <- applyPtSlOnT1(close, events, c(1, 1))
+# Create a sample dataset
+set.seed(37)
+sample_dates <- seq.POSIXt(from = as.POSIXct("2024-06-01 09:30"), to = as.POSIXct("2024-06-10 16:00"), by = "min")
+n <- length(sample_dates)
 
-head(events)
+sample_data <- tibble(
+  date = sample_dates,
+  close = cumsum(rnorm(n, 0, 0.5)) + 100,
+  Open = cumsum(rnorm(n, 0, 0.5)) + 100,
+  High = cumsum(rnorm(n, 0, 0.5)) + 100,
+  Low = cumsum(rnorm(n, 0, 0.5)) + 100,
+  Volume = sample(1:1000, n, replace = TRUE)
+)
+
+# Sample events data
+sample_events <- tibble(
+  date = sample(sample_dates, 2),
+  t1 = sample(sample_dates, 2),
+  trgt = runif(2, 0.1, 0.5),
+  side = sample(c(-1, 1), 2, replace = TRUE)
+)
+
+# Print sample data
+print(sample_data)
+print(sample_events)
+
+result <- applyPtSlOnT1(sample_data, sample_events, c(1, 1))
+
+# Plot using base plot
+plot(sample_data$date, sample_data$close, type = "l", 
+     col = "steelblue", xlab = "Date", ylab = "Close Price", 
+     main = "Close Prices with Event Points",
+     frame.plot = F)
+
+# Adding event points
+points(result$date[1], 
+       sample_data$close[match(result$date, sample_data$date)][1], 
+       col = "indianred", pch = 16)
+
+target=.1
+segments(
+  x0=result$date,
+  x1=result$date,
+  y0=sample_data$close[match(result$date[1],sample_data$date)] * (1 + target),
+  y1=sample_data$close[match(result$date[1],sample_data$date)] * (1 - target),
+  col="indianred",
+  lwd=2,
+  lty=c("solid","dashed")
+)
+
+tp = sample_data$close[match(result$date[1],sample_data$date)] * (1 + target)
+sl = sample_data$close[match(result$date[1],sample_data$date)] * (1 - target)
+bl = sample_data$close[match(result$date[1],sample_data$date)]
+start_date = result$date[1]
+end_date = result$date[2]
+
+segments(
+  x0=rep(start_date,3),
+  x1=rep(end_date,3),
+  y0=c(tp,sl,bl),
+  y1=c(tp,sl,bl),
+  col="indianred",
+  lwd=2,
+  lty=c("dashed")
+         )
+
+abline(v=result$date,col="indianred",lty="dashed")
+
+
+points(result$sl, sample_data$close[match(result$sl, sample_data$date)], col = "orange", pch = 4)
+points(result$pt, sample_data$close[match(result$pt, sample_data$date)], col = "green", pch = 3)
+
+legend("topright", legend = c("Event", "Stop-Loss", "Profit-Taking"), col = c("red", "orange", "green"), pch = c(16, 4, 3))
+
+#events <- applyPtSlOnT1(close, events, c(1, 1))
+
+#head(events)
 
 
 # Learning Side and Size --------------------------------------------------
