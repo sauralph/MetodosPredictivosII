@@ -510,3 +510,5 @@ legend("topright", legend = c("Close", "Rolling Mean", "Upper Band", "Lower Band
 
 cusum_events<-getTEvents(returns_zoo,h = .05)
 abline(v=cusum_events,col="indianred",lty="dashed")
+
+
