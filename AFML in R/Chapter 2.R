@@ -307,6 +307,7 @@ hist(returns)
 qqnorm(returns)
 qqline(returns)
 
+write_parquet(tick_bars,"../Capitulo4/spy_future_tickbars.parquet")
 
 # 2.2 ---------------------------------------------------------------------
 
