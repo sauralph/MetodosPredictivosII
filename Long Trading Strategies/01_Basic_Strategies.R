@@ -1,128 +1,78 @@
 library(quantmod)
+library(TTR)
 
 # Get Bitcoin historical data from Yahoo Finance
 getSymbols("BTC-USD", src = "yahoo", from = "2020-01-01", to = Sys.Date())
 
 # Store the data in a variable
 bitcoin_data <- `BTC-USD`
-
-# Display the first few rows of the data
-head(bitcoin_data)
-
-# Plot the data
-plot(bitcoin_data)
 prices <- bitcoin_data$`BTC-USD.Close`
 
-
 # HODL strategy -----------------------------------------------------------
-
-(as.numeric(prices[length(prices)]) - as.numeric(prices[1])) / as.numeric(prices[1])
-
+hodl_return <- (as.numeric(prices[length(prices)]) - as.numeric(prices[1])) / as.numeric(prices[1])
+cat("HODL Cumulative Return: ", hodl_return * 100, "%\n")
 
 # SMA Strategy ------------------------------------------------------------
-
-# Calculate moving averages
 short_ma <- SMA(prices, n = 2)
 long_ma <- SMA(prices, n = 30)
+long_signals_sma <- which(short_ma > long_ma & lag(short_ma, 1) <= lag(long_ma, 1))
 
-# Determine long entry points
-long_signals <- which(short_ma > long_ma & lag(short_ma, 1) <= lag(long_ma, 1))
-
-# Plot the prices and signals
+# Plot the SMA strategy
 plot(prices, type = "l", main = "Moving Average Crossover Strategy", xlab = "Date", ylab = "Price")
 lines(short_ma, col = "blue")
 lines(long_ma, col = "red")
-points(prices[long_signals], col = "green", pch = 19)  # Long signals
+points(index(prices)[long_signals_sma], prices[long_signals_sma], col = "green", pch = 19)
 
-# Simulate the returns
-returns <- numeric(length(long_signals) - 1)
-for (i in 1:(length(long_signals) - 1)) {
-  entry_price <- as.numeric(prices[long_signals[i]])
-  exit_price <- as.numeric(prices[long_signals[i + 1]])
-  returns[i] <- (exit_price - entry_price) / entry_price
+# Simulate the SMA returns
+returns_sma <- numeric(length(long_signals_sma) - 1)
+for (i in 1:(length(long_signals_sma) - 1)) {
+  entry_price <- as.numeric(prices[long_signals_sma[i]])
+  exit_price <- as.numeric(prices[long_signals_sma[i + 1]])
+  returns_sma[i] <- (exit_price - entry_price) / entry_price
 }
-
-# Calculate cumulative return
-cumulative_return <- prod(1 + returns) - 1
-
-# Display results
-cat("Cumulative Return: ", cumulative_return * 100, "%\n")
-
-# Plot cumulative returns
-cumulative_returns <- cumprod(1 + returns) - 1
-plot(index(prices)[long_signals[-length(long_signals)]], cumulative_returns, type = "l", col = "green", lwd = 2, main = "Cumulative Returns of Moving Average Crossover Strategy", xlab = "Date", ylab = "Cumulative Return")
+cumulative_return_sma <- prod(1 + returns_sma) - 1
+cat("SMA Cumulative Return: ", cumulative_return_sma * 100, "%\n")
 
 # RSI Strategy ------------------------------------------------------------
-
-# Calculate RSI
 rsi <- RSI(prices, n = 14)
+long_signals_rsi <- which(rsi < 30 & lag(rsi, 1) >= 30)
 
-# Determine long entry points
-long_signals <- which(rsi < 30 & lag(rsi, 1) >= 30)
+# Plot the RSI strategy
+plot(prices, type = "l", main = "RSI Strategy", xlab = "Date", ylab = "Price")
+points(index(prices)[long_signals_rsi], prices[long_signals_rsi], col = "green", pch = 19)
 
-# Plotting the prices and signals
-plot(prices, type = "l", main = "RSI Strategy")
-points(prices[long_signals], col = "green", pch = 19)  # Long signals
-
-# Simulate the returns
-returns <- numeric(length(long_signals) - 1)
-for (i in 1:(length(long_signals) - 1)) {
-  entry_price <- as.numeric(prices[long_signals[i]])
-  exit_price <- as.numeric(prices[long_signals[i + 1]])
-  returns[i] <- (exit_price - entry_price) / entry_price
+# Simulate the RSI returns
+returns_rsi <- numeric(length(long_signals_rsi) - 1)
+for (i in 1:(length(long_signals_rsi) - 1)) {
+  entry_price <- as.numeric(prices[long_signals_rsi[i]])
+  exit_price <- as.numeric(prices[long_signals_rsi[i + 1]])
+  returns_rsi[i] <- (exit_price - entry_price) / entry_price
 }
+cumulative_return_rsi <- prod(1 + returns_rsi) - 1
+cat("RSI Cumulative Return: ", cumulative_return_rsi * 100, "%\n")
 
-# Calculate cumulative return
-cumulative_return <- prod(1 + returns) - 1
-
-# Display results
-cat("Cumulative Return: ", cumulative_return * 100, "%\n")
-
-# Plot cumulative returns
-cumulative_returns <- cumprod(1 + returns) - 1
-plot(index(prices)[long_signals[-length(long_signals)]], cumulative_returns, type = "l", col = "green", lwd = 2, main = "Cumulative Returns of RSI Strategy", xlab = "Date", ylab = "Cumulative Return")
-
-# Bollinger Bands ---------------------------------------------------------
-
-# Calculate Bollinger Bands
+# Bollinger Bands Strategy ------------------------------------------------
 bbands <- BBands(prices, n = 20, sd = 2)
-# Determine long entry points
-long_signals <- which(prices < bbands[,"dn"] & lag(prices, 1) >= lag(bbands[,"dn"], 1))
+long_signals_bbands <- which(prices < bbands[, "dn"] & lag(prices, 1) >= lag(bbands[, "dn"], 1))
 
-# Plotting the prices and signals
-plot(prices, type = "l", main = "Bollinger Bands Strategy", xlab = "Time", ylab = "Price")
-lines(bbands[,"dn"], col = "red")
-points(prices[long_signals], col = "green", pch = 19)  # Long signals
+# Plot the Bollinger Bands strategy
+plot(prices, type = "l", main = "Bollinger Bands Strategy", xlab = "Date", ylab = "Price")
+lines(bbands[, "dn"], col = "red")
+points(index(prices)[long_signals_bbands], prices[long_signals_bbands], col = "green", pch = 19)
 
-# Simulate the returns
-returns <- numeric(length(long_signals) - 1)
-for (i in 1:(length(long_signals) - 1)) {
-  entry_price <- as.numeric(prices[long_signals[i]])
-  exit_price <- as.numeric(prices[long_signals[i + 1]])
-  returns[i] <- (exit_price - entry_price) / entry_price
+# Simulate the Bollinger Bands returns
+returns_bbands <- numeric(length(long_signals_bbands) - 1)
+for (i in 1:(length(long_signals_bbands) - 1)) {
+  entry_price <- as.numeric(prices[long_signals_bbands[i]])
+  exit_price <- as.numeric(prices[long_signals_bbands[i + 1]])
+  returns_bbands[i] <- (exit_price - entry_price) / entry_price
 }
+cumulative_return_bbands <- prod(1 + returns_bbands) - 1
+cat("Bollinger Bands Cumulative Return: ", cumulative_return_bbands * 100, "%\n")
 
-# Handle the case where there's only one long signal
-if (length(long_signals) > 1) {
-  # Calculate cumulative return
-  cumulative_return <- prod(1 + returns) - 1
-  
-  # Display results
-  cat("Cumulative Return: ", cumulative_return * 100, "%\n")
-  
-  # Plot cumulative returns
-  cumulative_returns <- cumprod(1 + returns) - 1
-  plot(long_signals[-length(long_signals)], cumulative_returns, type = "l", col = "green", lwd = 2, main = "Cumulative Returns of Bollinger Bands Strategy", xlab = "Time", ylab = "Cumulative Return")
-} else {
-  cat("Not enough long signals to simulate returns.\n")
-}
-
-
-# CUMSUM Filter -----------------------------------------------------------
-
-# Define the CUSUM filter function
+# CUSUM Filter Strategy ---------------------------------------------------
 cusum_filter <- function(prices, threshold) {
-  prices_<-as.numeric(prices)
+  prices_ <- as.numeric(prices)
   n <- length(prices_)
   S <- rep(0, n)
   long_signals <- rep(0, n)
@@ -138,37 +88,30 @@ cusum_filter <- function(prices, threshold) {
   return(which(long_signals == 1))
 }
 
-
-# Set the threshold for the CUSUM filter
 threshold <- 1000
+long_signals_cusum <- cusum_filter(prices, threshold)
 
-# Get long signals
-long_signals <- cusum_filter(prices, threshold)
-
-# Plotting the prices and signals
+# Plot the CUSUM Filter strategy
 plot(prices, type = "l", main = "CUSUM Filter Strategy", xlab = "Date", ylab = "Price")
-points(index(prices)[long_signals], prices[long_signals], col = "green", pch = 19)  # Long signals
+points(index(prices)[long_signals_cusum], prices[long_signals_cusum], col = "green", pch = 19)
 
-# Simulate the returns
-returns <- numeric(length(long_signals) - 1)
-for (i in 1:(length(long_signals) - 1)) {
-  entry_price <- as.numeric(prices[long_signals[i]])
-  exit_price <- as.numeric(prices[long_signals[i + 1]])
-  returns[i] <- (exit_price - entry_price) / entry_price
+# Simulate the CUSUM Filter returns
+returns_cusum <- numeric(length(long_signals_cusum) - 1)
+for (i in 1:(length(long_signals_cusum) - 1)) {
+  entry_price <- as.numeric(prices[long_signals_cusum[i]])
+  exit_price <- as.numeric(prices[long_signals_cusum[i + 1]])
+  returns_cusum[i] <- (exit_price - entry_price) / entry_price
 }
+cumulative_return_cusum <- prod(1 + returns_cusum) - 1
+cat("CUSUM Filter Cumulative Return: ", cumulative_return_cusum * 100, "%\n")
 
-# Handle the case where there's only one long signal
-if (length(long_signals) > 1) {
-  # Calculate cumulative return
-  cumulative_return <- prod(1 + returns) - 1
-  
-  # Display results
-  cat("Cumulative Return: ", cumulative_return * 100, "%\n")
-  
-  # Plot cumulative returns
-  cumulative_returns <- cumprod(1 + returns) - 1
-  plot(index(prices)[long_signals[-length(long_signals)]], cumulative_returns, type = "l", col = "green", lwd = 2, main = "Cumulative Returns of CUSUM Filter Strategy", xlab = "Date", ylab = "Cumulative Return")
-} else {
-  cat("Not enough long signals to simulate returns.\n")
-}
+# Create a markdown table with the cumulative returns --------------------
+cat("\n# Cumulative Returns for All Strategies\n")
+cat("| Strategy | Cumulative Return (%) |\n")
+cat("|----------|-----------------------|\n")
+cat("| HODL |", hodl_return * 100, "|\n")
+cat("| SMA |", cumulative_return_sma * 100, "|\n")
+cat("| RSI |", cumulative_return_rsi * 100, "|\n")
+cat("| Bollinger Bands |", cumulative_return_bbands * 100, "|\n")
+cat("| CUSUM Filter |", cumulative_return_cusum * 100, "|\n")
 
