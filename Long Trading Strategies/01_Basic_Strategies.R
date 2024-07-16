@@ -8,6 +8,9 @@ getSymbols("BTC-USD", src = "yahoo", from = "2020-01-01", to = Sys.Date())
 bitcoin_data <- `BTC-USD`
 prices <- bitcoin_data$`BTC-USD.Close`
 
+prices <- na.approx(prices)
+
+
 # HODL strategy -----------------------------------------------------------
 hodl_return <- (as.numeric(prices[length(prices)]) - as.numeric(prices[1])) / as.numeric(prices[1])
 cat("HODL Cumulative Return: ", hodl_return * 100, "%\n")
@@ -21,7 +24,7 @@ long_signals_sma <- which(short_ma > long_ma & lag(short_ma, 1) <= lag(long_ma, 
 plot(prices, type = "l", main = "Moving Average Crossover Strategy", xlab = "Date", ylab = "Price")
 lines(short_ma, col = "blue")
 lines(long_ma, col = "red")
-points(index(prices)[long_signals_sma], prices[long_signals_sma], col = "green", pch = 19)
+points(prices[long_signals_sma], col = "green", pch = 19)
 
 # Simulate the SMA returns
 returns_sma <- numeric(length(long_signals_sma) - 1)
