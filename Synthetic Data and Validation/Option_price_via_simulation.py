@@ -42,7 +42,7 @@ print(f"Monte Carlo Option Price: {mc_option_price:.2f}")
 print(f"Black-Scholes Option Price: {bs_option_price:.2f}")
 
 # Plot all paths
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(16, 9))
 #plt.plot(S.T, color='gray', alpha=0.1)
 plt.plot(S_ci_upper, color='red', linewidth=2, label='95% CI Upper')
 plt.plot(S_ci_lower, color='red', linewidth=2, label='95% CI Lower')
@@ -60,4 +60,6 @@ plt.xlabel('Time Steps')
 plt.ylabel('Stock Price')
 plt.title('Monte Carlo Simulation of Stock Prices')
 plt.legend()
+plt.savefig("MC_simulation_stock_prices.png")
 plt.show()
+

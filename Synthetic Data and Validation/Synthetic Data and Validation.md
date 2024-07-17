@@ -2,10 +2,12 @@
 marp: true
 theme: gaia
 math: katex
-class: lead
+class: invert
 ---
 
 # Understanding Overlapping Outcomes in Financial ML
+
+---
 
 ## Key Concepts:
 - **Labeling Financial Data**
@@ -42,6 +44,8 @@ class: lead
 ## Binary Array for Overlap:
 - For each time point $t = 1, \ldots, T$, create a binary array $1_{t,i}$ for $i = 1, \ldots, I$.
 - $1_{t,i} = 1$ if $[t_{i,0}, t_{i,1}]$ overlaps with $[t-1, t]$, otherwise $1_{t,i} = 0$.
+
+---
 
 ## Counting Concurrent Labels:
 - Sum the binary array: $c_t = \sum_{i=1}^{I} 1_{t,i}$.
