@@ -612,6 +612,157 @@ plt.fill_between(range(M+1), S_max, S_min, color='gray', alpha=0.5, label='Min-M
 
 ---
 
-# Bibliografía
-- López de Prado, M. (2018). *Advances in Financial Machine Learning*. Wiley. (Chapter 13)
+# Bootstrapping y Estrategia de Trading
 
+## Introducción
+
+- **Objetivo:** Realizar bootstrapping en datos de precios de Bitcoin y aplicar lógica de trading.
+- **Herramientas Utilizadas:** Python, yfinance, statsmodels, pandas, numpy, matplotlib.
+
+---
+
+## Paso 3: Función de Bootstrapping
+
+```python
+def block_bootstrap(data, block_size, num_samples):
+    n = len(data)
+    bootstrapped_series = []
+    
+    for _ in range(num_samples):
+        indices = np.arange(n)
+        block_start = np.random.choice(indices[:-block_size])
+        bootstrap_sample = []
+        
+        for _ in range(int(n/block_size)):
+            block = data[block_start:block_start+block_size]
+            bootstrap_sample.extend(block)
+            block_start = np.random.choice(indices[:-block_size])
+        
+        bootstrapped_series.append(bootstrap_sample[:n])
+    
+    return np.array(bootstrapped_series)
+```
+---
+## Paso 3: Función de Bootstrapping
+
+- **`block_bootstrap`:** Realiza bootstrapping por bloques en los datos.
+- **Parámetros:**
+  - `block_size`: Tamaño de cada bloque.
+  - `num_samples`: Número de muestras bootstrapped a generar.
+
+---
+
+## Paso 4: Parámetros de Bootstrapping
+
+```python
+# Parámetros
+block_size = 10
+num_samples = 1000
+
+# Realizar bootstrapping
+bootstrapped_data = block_bootstrap(prices, block_size, num_samples)
+```
+
+- **`block_size`:** Tamaño de bloque fijado en 10.
+- **`num_samples`:** Número de muestras fijado en 1000.
+- **`bootstrapped_data`:** Datos resultantes del bootstrapping.
+
+---
+
+## Paso 5: Modelado ARIMA en Series Bootstrap
+
+```python
+from statsmodels.tsa.arima.model import ARIMA
+
+model_params = []
+
+for series in bootstrapped_data:
+    model = ARIMA(series, order=(1, 0, 1))
+    fitted_model = model.fit()
+    model_params.append(fitted_model.params)
+
+print(fitted_model.summary())
+```
+
+- **Modelo ARIMA:** Ajusta un modelo ARIMA (1,0,1) a cada serie bootstrapped.
+- **`model_params`:** Guarda los parámetros ajustados del modelo.
+
+---
+
+## Paso 6: Análisis de Parámetros
+
+```python
+# Convertir a DataFrame para análisis
+model_params_df = pd.DataFrame(model_params, columns=['const', 'ar.L1', 'ma.L1','sigma2'])
+
+# Calcular estadísticas
+param_means = model_params_df.mean()
+param_ci = model_params_df.quantile([0.025, 0.975])
+
+print("Parameter Means:")
+print(param_means)
+print("\n95% Confidence Intervals:")
+print(param_ci)
+```
+---
+## Paso 6: Análisis de Parámetros
+
+- **`model_params_df`:** DataFrame con los parámetros del modelo.
+- **Media y Intervalos de Confianza:** Calcula la media y los intervalos de confianza al 95% para los parámetros.
+
+---
+
+## Paso 7: Lógica de Trading y Visualización
+
+```python
+sigma_hat = 1231.50
+T_max = 100
+results = apply_trading_logic(bootstrapped_data, construct_mesh(sigma_hat), T_max)
+determine_optimal_rule(results)
+sorted_results = results.sort_values(by=['pi', 'pi_bar'])
+pivot_table = sorted_results.pivot_table('sharpe_ratio','pi', 'pi_bar')
+
+```
+---
+## Paso 7: Lógica de Trading y Visualización
+
+
+- **`apply_trading_logic`:** Aplica la lógica de trading a los datos bootstrapped.
+- **Visualización:** Muestra la exploración del espacio de parámetros en un gráfico de contorno.
+
+---
+Espacio de Parámetros R segun Bootstrap
+![Espacio R](R_space_contour_bs.png) 
+
+---
+
+Espacio de Parámetros R segun Datos Sinteticos
+![Espacio R](R_space_contour.png) 
+
+---
+
+# Resultados
+
+| Metodo    |    $\pi$ |   $\bar{\pi}$ |   sharpe_ratio |
+|-----------|---------:|--------------:|---------------:|
+| Bootstrap | -14778   |         1231  |         1.446  |
+| Sintetico | -14778.6 |      1231.50  |         3.303  |
+
+- Si bien los resultados son similares, el valor sharpe es más alto en el caso de los datos sintéticos, lo que sugiere una mayor variabilidad en los resultados.
+
+--- 
+
+## Conclusión
+
+- **Bootstrapping:** Permite generar múltiples muestras de datos para probar la robustez de un modelo.
+- **Modelado ARIMA:** Ajusta modelos a las muestras bootstrapped para analizar la distribución de parámetros.
+- **Lógica de Trading:** Aplica estrategias de trading y visualiza los resultados para encontrar parámetros óptimos.
+
+---
+
+
+---
+# Referencias
+
+- López de Prado, M. (2018). *Advances in Financial Machine Learning*. Wiley. (Chapter 13)
+- Codigos y ejemplos en [Github](https://github.com/sauralph/MetodosPredictivosII/tree/main/Synthetic%20Data%20and%20Validation)

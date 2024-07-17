@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import yfinance as yf
+import importlib
 
 
 # Step 1: Get Bitcoin historical data from Yahoo Finance
@@ -64,3 +65,49 @@ print(param_means)
 print("\n95% Confidence Intervals:")
 print(param_ci)
 
+def apply_trading_logic(paths, mesh, T_max):
+    N = paths.shape[0]
+    results = []
+
+    for pi, pi_bar in mesh:
+        final_pnl = []
+        
+        for j in range(N):
+            for t in range(T_max):
+                pnl = paths[j, t] - paths[j, 0]
+                if pnl <= pi or pnl >= pi_bar:
+                    final_pnl.append(pnl)
+                    break
+                if t == T_max - 1:
+                    final_pnl.append(pnl)
+        
+        sharpe_ratio = np.mean(final_pnl) / np.std(final_pnl)
+        results.append([pi, pi_bar, sharpe_ratio])
+    
+    return pd.DataFrame(results, columns=['pi', 'pi_bar', 'sharpe_ratio'])
+
+def determine_optimal_rule(results):
+    return results.loc[results['sharpe_ratio'].idxmax()]
+
+
+def construct_mesh(sigma):
+    pi = np.linspace(-12 * sigma, -sigma, 10)
+    pi_bar = np.linspace(sigma, 12 * sigma, 10)
+    mesh = np.array(np.meshgrid(pi, pi_bar)).T.reshape(-1, 2)
+    return mesh
+
+sigma_hat = 1231.50
+T_max = 100
+
+results = apply_trading_logic(bootstrapped_data, construct_mesh(sigma_hat), T_max)
+determine_optimal_rule(results)
+sorted_results = results.sort_values(by=['pi', 'pi_bar'])
+pivot_table = sorted_results.pivot_table('sharpe_ratio','pi', 'pi_bar')
+
+plt.figure(figsize=(16, 9))
+contour = plt.contourf(pivot_table.columns, pivot_table.index, pivot_table, cmap='viridis')
+plt.title('Exploracion de espacio de parametros')
+plt.xlabel('pi')
+plt.ylabel('pi_bar')
+plt.savefig('R_space_contour_bs.png')
+plt.show()
