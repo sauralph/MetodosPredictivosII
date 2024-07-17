@@ -13,6 +13,9 @@ prices = btc_data['Close']
 # Interpolate NA values
 prices = prices.interpolate()
 
+# Difference the series
+prices = prices.diff().dropna()
+
 # Step 1: Estimate input parameters {sigma, phi}
 def estimate_parameters(prices, E0):
     T_max = len(prices)
@@ -105,8 +108,6 @@ print(optimal_rule)
 # Plot the contour
 sorted_results = results.sort_values(by=['pi', 'pi_bar'])
 pivot_table = sorted_results.pivot_table('sharpe_ratio','pi', 'pi_bar')
-
-
 
 plt.figure(figsize=(16, 9))
 contour = plt.contourf(pivot_table.columns, pivot_table.index, pivot_table, cmap='viridis')
