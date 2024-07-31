@@ -108,6 +108,7 @@ def estimate_total_tanks(data):
 observed_estimate = estimate_total_tanks(sample_data)
 print(f"Estimación observada de N: {observed_estimate}")
 ```
+---
 ```
 Estimación observada de N: 99.8
 ```
@@ -712,101 +713,337 @@ for i in range(n):
 - **Teoría:**
   - Transformada Wavelet Continua (CWT) vs. Transformada Wavelet Discreta (DWT).
   - Casos de uso en finanzas para detectar patrones en diferentes escalas.
+
+--- 
+
 - **Implementación:**
+# Análisis de la Transformada Wavelet en R
+
+## Carga de Datos y Preprocesamiento
+
+```r
+#instalar paquetes necesarios
+#install.packages("quantmod")
+#install.packages("WaveletComp")
+library(quantmod)
+library(WaveletComp)
+
+# Obtener datos de precios de YPF desde Yahoo Finance
+getSymbols("YPFD.BA", src = "yahoo", from = "2014-01-01", to = "2024-01-01")
+
+# Extraer precios de cierre
+ypf_ba <- Cl(`YPFD.BA`)
+ypf_ba <- ypf_ba[!is.na(ypf_ba)]
+
+# Convertir a data frame
+ypf_df <- data.frame(date = index(ypf_ba), price = as.vector(ypf_ba))
+```
+
+---
+
+## Transformada Wavelet y Visualización del Espectro
+
+```r
+# Realizar transformada wavelet
+ypf_wavelet <- analyze.wavelet(ypf_df, my.series = "price", loess.span = 0)
+
+# Graficar el espectro de potencia wavelet
+wt.image(ypf_wavelet, main = "Espectro de Potencia de YPF")
+```
+
+### Explicación:
+- **Transformada Wavelet**: Se utiliza `analyze.wavelet` del paquete `WaveletComp` para realizar la transformada wavelet en los precios de cierre de YPF.
+- **Espectro de Potencia**: `wt.image` se utiliza para visualizar el espectro de potencia, mostrando la variabilidad de los componentes de frecuencia a lo largo del tiempo.
+
+---
+
+![ypf_wavelet](ypf_wavelet.png)
+
+---
+## Interpretación del Espectro de Potencia
+
+### Estructuras Horizontales
+
+- **Estructuras Horizontales**: 
+  - Representan patrones de frecuencia que permanecen constantes durante un período prolongado.
+  - Indican la presencia de ciclos o componentes de frecuencia que dominan durante ese tiempo.
+
+---
+
+## Interpretación del Espectro de Potencia
+
+### Estructuras Verticales
+
+- **Estructuras Verticales**: 
+  - Representan cambios rápidos en la frecuencia.
+  - Pueden indicar eventos de corta duración o anomalías en la serie temporal, como picos o caídas bruscas.
+
+---
+
+## Interpretación del Espectro de Potencia
+
+### Grupos
+
+- **Grupos**: 
+  - Conjuntos de estructuras horizontales y verticales que muestran un patrón recurrente.
+  - Indican la presencia de ciclos o patrones complejos que se repiten en la serie temporal.
+
+---
+
+# Estrategias de Trading
+
+---
+
+## Estrategia HODL
 
 ```python
-import pywt
-import numpy as np
-import matplotlib.pyplot as plt
-
-coeffs, freqs = pywt.cwt(prices, scales, 'morl')
-plt.imshow(coeffs, extent=[0, len(prices), 1, 31], cmap='PRGn', aspect='auto', vmax=abs(coeffs).max(), vmin=-abs(coeffs).max())
-plt.show()
+# HODL strategy -----------------------------------------------------------
+hodl_return = (test_prices[-1] - test_prices[0]) / test_prices[0]
+print("HODL Cumulative Return: {:.2f}%".format(hodl_return * 100))
 ```
+
+- **HODL**: Mantener el activo a largo plazo sin realizar cambios en la posición.
+- **Ventaja**: Simple de implementar.
+- **Desventaja**: No aprovecha las oportunidades de mercado a corto plazo.
+- **Retorno**: Calcula el retorno acumulado desde el inicio hasta el final del periodo de prueba.
 
 ---
 
-## Estrategias de Trading
-
-- **Objetivo:** Introducir e implementar diversas estrategias de trading.
-
-### Estrategia HODL
-- **Código:**
-
-```r
-hodl_return <- (as.numeric(prices[length(prices)]) - as.numeric(prices[1])) / as.numeric(prices[1])
-cat("HODL Cumulative Return: ", hodl_return * 100, "%\n")
-```
-
-### Estrategia de Cruce de Medias Móviles (SMA)
-- **Código:**
-
-```r
-short_ma <- SMA(prices, n = 2)
-long_ma <- SMA(prices, n = 30)
-long_signals_sma <- which(short_ma > long_ma & lag(short_ma, 1) <= lag(long_ma, 1))
-...
-```
-
-### Estrategia RSI
-- **Código:**
-
-```r
-rsi <- RSI(prices, n = 14)
-long_signals_rsi <- which(rsi < 30 & lag(rsi, 1) >= 30)
-...
-```
-
-### Estrategia de Bandas de Bollinger
-- **Código:**
-
-```r
-bbands <- BBands(prices, n = 20, sd = 2)
-long_signals_bbands <- which(prices < bbands[, "dn"] & lag(prices, 1) >= lag(bbands[, "dn"], 1))
-...
-```
-
-### Estrategia de Filtro CUSUM
-- **Código:**
-
-```r
-cusum_filter <- function(prices, threshold) {
-  ...
-}
-long_signals_cusum <- cusum_filter(prices, threshold)
-...
-```
-
----
-
-## Optimización de Portafolio con Métodos Numéricos
-
-- **Objetivo:** Introducir e implementar la optimización de portafolios usando algoritmos genéticos.
-- **Teoría:**
-  - Definir la función objetivo para la optimización.
-  - Uso de la biblioteca DEAP para algoritmos evolutivos.
-- **Implementación:**
+## Estrategia de Media Móvil Simple (SMA)
 
 ```python
-from deap import base, creator, tools, algorithms
-...
-def run():
-    ...
-result = run()
+# SMA Strategy ------------------------------------------------------------
+def optimize_sma(train_prices):
+    best_return = -np.inf
+    best_short_window = 0
+    best_long_window = 0
+    param_grid = ParameterGrid({'short_window': range(2, 10), 'long_window': range(20, 50, 5)})
+    
+    for params in param_grid:
+        short_ma = train_prices.rolling(window=params['short_window']).mean()
+        long_ma = train_prices.rolling(window=params['long_window']).mean()
+        signals = np.where((short_ma > long_ma) & (short_ma.shift(1) <= long_ma.shift(1)))[0]
+        
+        if len(signals) < 2:
+            continue
+        
+        returns = [(train_prices.iloc[signals[i + 1]] - train_prices.iloc[signals[i]]) / train_prices.iloc[signals[i]] for i in range(len(signals) - 1)]
+        cumulative_return = np.prod([1 + r for r in returns]) - 1
+        
+        if cumulative_return > best_return:
+            best_return = cumulative_return
+            best_short_window = params['short_window']
+            best_long_window = params['long_window']
+    
+    return best_short_window, best_long_window
 
-w0 = weights(result)
-
-print("Optimal weights:", w0)
-print("Expected return:", portfolio_return(w0))
-print("Expected volatility:", portfolio_volatility(w0))
+best_short_window, best_long_window = optimize_sma(train_prices)
+short_ma = test_prices.rolling(window=best_short_window).mean()
+long_ma = test_prices.rolling(window=best_long_window).mean()
+long_signals_sma = np.where((short_ma > long_ma) & (short_ma.shift(1) <= long_ma.shift(1)))[0]
 ```
+
+- **Optimización**: Busca las mejores ventanas de media móvil corta y larga.
+- **Señales**: Genera señales de compra cuando la media móvil corta cruza por encima de la media móvil larga.
+
+---
+![ma](ma.png)
 
 ---
 
-## Conclusión
+## Estrategia de Índice de Fuerza Relativa (RSI)
 
-- **Recapitulación:** Resumir los puntos clave sobre la generación de datos sintéticos, DTW, Transformada Wavelet, estrategias de trading y optimización de portafolio.
-- **Q&A:** Espacio para preguntas y aclaraciones.
+```python
+# RSI Strategy ------------------------------------------------------------
+def optimize_rsi(train_prices):
+    best_return = -np.inf
+    best_window = 0
+    param_grid = ParameterGrid({'window': range(10, 20)})
+    
+    for params in param_grid:
+        rsi = RSIIndicator(train_prices, window=params['window']).rsi()
+        signals = np.where((rsi < 30) & (rsi.shift(1) >= 30))[0]
+        
+        if len(signals) < 2:
+            continue
+        
+        returns = [(train_prices.iloc[signals[i + 1]] - train_prices.iloc[signals[i]]) / train_prices.iloc[signals[i]] for i in range(len(signals) - 1)]
+        cumulative_return = np.prod([1 + r for r in returns]) - 1
+        
+        if cumulative_return > best_return:
+            best_return = cumulative_return
+            best_window = params['window']
+    
+    return best_window
+
+best_rsi_window = optimize_rsi(train_prices)
+rsi = RSIIndicator(test_prices, window=best_rsi_window).rsi()
+long_signals_rsi = np.where((rsi < 30) & (rsi.shift(1) >= 30))[0]
+```
+
+- **Optimización**: Busca la mejor ventana para el cálculo del RSI.
+- **Señales**: Genera señales de compra cuando el RSI cae por debajo de 30 y luego sube por encima.
+
+---
+
+## Estrategia de Bandas de Bollinger
+
+```python
+# Bollinger Bands Strategy ------------------------------------------------
+def optimize_bbands(train_prices):
+    best_return = -np.inf
+    best_window = 0
+    param_grid = ParameterGrid({'window': range(10, 30, 2), 'window_dev': [1, 2, 3]})
+    
+    for params in param_grid:
+        bbands = BollingerBands(close=train_prices, window=params['window'], window_dev=params['window_dev'])
+        signals = np.where((train_prices < bbands.bollinger_lband()) & (train_prices.shift(1) >= bbands.bollinger_lband().shift(1)))[0]
+        
+        if len(signals) < 2:
+            continue
+        
+        returns = [(train_prices.iloc[signals[i + 1]] - train_prices.iloc[signals[i]]) / train_prices.iloc[signals[i]] for i in range(len(signals) - 1)]
+        cumulative_return = np.prod([1 + r for r in returns]) - 1
+        
+        if cumulative_return > best_return:
+            best_return = cumulative_return
+            best_window = params['window']
+            best_window_dev = params['window_dev']
+    
+    return best_window, best_window_dev
+
+best_bbands_window, best_bbands_window_dev = optimize_bbands(train_prices)
+bbands = BollingerBands(close=test_prices, window=best_bbands_window, window_dev=best_bbands_window_dev)
+long_signals_bbands = np.where((test_prices < bbands.bollinger_lband()) & (test_prices.shift(1) >= bbands.bollinger_lband().shift(1)))[0]
+```
+
+- **Optimización**: Busca las mejores ventanas y desviaciones para las Bandas de Bollinger.
+- **Señales**: Genera señales de compra cuando el precio cae por debajo de la banda inferior y luego sube por encima.
+
+---
+![bollinger](bollinger.png)
+
+---
+
+## Estrategia de Filtro CUSUM
+
+```python
+# CUSUM Filter Strategy ---------------------------------------------------
+def cusum_filter(prices, threshold):
+    n = len(prices)
+    S = np.zeros(n)
+    long_signals = np.zeros(n)
+    for t in range(1, n):
+        S[t] = max(0, S[t-1] + prices[t] - prices[t-1])
+        if S[t] >= threshold:
+            long_signals[t] = 1  # Generate a long signal
+            S[t] = 0  # Reset S[t]
+    return np.where(long_signals == 1)[0]
+
+# Optimize CUSUM threshold
+def optimize_cusum(train_prices):
+    best_return = -np.inf
+    best_threshold = 0
+    param_grid = ParameterGrid({'threshold': range(500, 1500, 100)})
+    for params in param_grid:
+        signals = cusum_filter(train_prices.values, params['threshold'])
+        if len(signals) < 2:
+            continue
+        returns = [(train_prices.iloc[signals[i + 1]] - train_prices.iloc[signals[i]]) / train_prices.iloc[signals[i]] for i in range(len(signals) - 1)]
+        cumulative_return = np.prod([1 + r for r in returns]) - 1
+        if cumulative_return > best_return:
+            best_return = cumulative_return
+            best_threshold = params['threshold']
+    return best_threshold
+
+best_cusum_threshold = optimize_cusum(train_prices)
+long_signals_cusum = cusum_filter(test_prices.values, best_cusum_threshold)
+```
+
+- **Optimización**: Busca el mejor umbral para el filtro CUSUM.
+- **Señales**: Genera señales de compra cuando la suma acumulada de cambios de precios excede el umbral.
+
+---
+
+![cusum](cusum.png)
+
+---
+
+## Comparación de Estrategias
+
+- **HODL**: Retorno acumulado simple manteniendo el activo.
+- **SMA**: Cruce de medias móviles para generar señales de compra.
+- **RSI**: Uso del índice de fuerza relativa para identificar puntos de sobreventa.
+- **Bandas de Bollinger**: Identificación de puntos de compra cuando el precio cae por debajo de la banda inferior.
+- **CUSUM**: Filtro acumulativo para detectar cambios significativos en los precios.
+
+Cada estrategia se optimiza utilizando un conjunto de entrenamiento y se evalúa utilizando un conjunto de prueba.
+
+---
+# Retornos cumulativos para las estrategias
+
+| Estrategia | Retorno Cumulativo (%) |
+|----------|-----------------------|
+| HODL | 49.89 |
+| SMA | 52.87 |
+| RSI | -6.00 |
+| Bollinger Bands | 0.00 |
+| CUSUM Filter | 51.06 |
+
+---
+# Entrenamiento de RF con Bootstrap
+
+---
+
+## Random Forest Naive
+
+- **Definición**: Random Forest es un algoritmo de aprendizaje supervisado que utiliza múltiples árboles de decisión para mejorar la precisión y evitar el sobreajuste.
+- **Funcionamiento**:
+  1. **Entrenamiento**: Cada árbol de decisión se entrena con una muestra aleatoria del conjunto de datos.
+  2. **Predicción**: Las predicciones de todos los árboles se combinan (votación) para obtener la predicción final.
+- **Ventaja**: Simplicidad y capacidad de manejar datos grandes y complejos.
+- **Desventaja**: Puede no captar completamente la variabilidad y patrones presentes en los datos debido al uso de muestras fijas para cada árbol.
+
+---
+
+## Random Forest con Bootstrap
+
+- **Definición**: Random Forest con Bootstrap utiliza la técnica de remuestreo (bootstrap) para mejorar la estimación de los parámetros del modelo.
+- **Funcionamiento**:
+  1. **Bootstrap**: Se generan múltiples conjuntos de datos remuestreados a partir del conjunto de datos original.
+  2. **Entrenamiento**: Se entrena un modelo Random Forest en cada conjunto de datos remuestreado.
+  3. **Promedio**: Las predicciones y métricas de rendimiento se promedian sobre todos los modelos.
+- **Ventaja**: Mejora la robustez y precisión del modelo al reducir el sesgo y la varianza.
+- **Desventaja**: Mayor complejidad computacional debido al entrenamiento de múltiples modelos.
+
+---
+
+## Comparación
+
+| Aspecto                | Random Forest Naive        | Random Forest con Bootstrap   |
+|------------------------|----------------------------|-------------------------------|
+| **Muestras de Entrenamiento** | Fijas                        | Remuestreadas (Bootstrap)     |
+| **Robustez**           | Moderada                   | Alta                          |
+| **Varianza**           | Moderada                   | Baja                          |
+| **Sesgo**              | Moderado                   | Bajo                          |
+| **Computación**        | Menor                      | Mayor                         |
+
+---
+
+# Random Forest para Prediccion de Señales
+
+| Estrategia | Retorno Cumulativo (%) |
+|----------|-----------------------|
+| Random Forest Bootstraped| 53.93 |
+| CUSUM Filter | 51.06 |
+| Random Forest basico | 25.14 |
+| HODL | 49.89 |
+| SMA | 52.87 |
+| RSI | -6.00 |
+| Bollinger Bands | 0.00 |
+---
+
+# Preguntas
 
 ---
 
