@@ -181,6 +181,348 @@ No existe evidencia significativa para rechazar la hipótesis nula de que el nú
 
 ---
 
+# Optimización de Portafolios con Métodos Numéricos
+
+---
+
+## Metodo de Fuerza Bruta
+
+---
+## Descarga y Preparación de Datos
+
+```python
+import yfinance as yf
+import pandas as pd
+from datetime import datetime
+import numpy as np
+import random
+import matplotlib.pyplot as plt
+from deap import base, creator, tools, algorithms
+
+stocks = [
+    "AGRO.BA", "ALUA.BA", "AUSO.BA", "BBAR.BA", "BHIP.BA", "BMA.BA", "BPAT.BA",
+    "BRIO.BA", "SUPV.BA", "BOLT.BA", "BYMA.BA", "CVH.BA", "CGPA2.BA", "CAPX.BA",
+    "CADO.BA", "CELU.BA", "CECO2.BA", "CEPU.BA", "COME.BA", "INTR.BA", "CTIO.BA",
+    "CRES.BA", "DOME.BA", "DYCA.BA", "EDN.BA", "FERR.BA", "FIPL.BA", "GARO.BA",
+    "DGCU2.BA", "GBAN.BA", "GGAL.BA", "OEST.BA", "GRIM.BA", "VALO.BA", "HAVA.BA",
+    "HARG.BA", "INAG.BA", "INVJ.BA", "IRSA.BA", "SEMI.BA", "LEDE.BA", "LOMA.BA",
+    "LONG.BA", "METR.BA", "MIRG.BA", "MOLI.BA", "MORI.BA", "PAMP.BA", "PATA.BA",
+    "POLL.BA", "RIGO.BA", "ROSE.BA", "SAMI.BA", "TECO2.BA", "TXAR.BA",
+    "TRAN.BA", "TGNO4.BA", "YPFD.BA",
+    "BTC-USD", "ETH-USD"
+]
+
+start_date = "2011-01-02"
+end_date = datetime.now().strftime('%Y-%m-%d')
+
+data = yf.download(stocks, start=start_date, end=end_date)
+data.interpolate(method='linear', inplace=True)
+```
+
+---
+
+# Dividir Datos en Entrenamiento y Prueba
+
+```python
+training_data = data[:'2023-12-31']
+testing_data = data['2024-01-01':]
+
+returns_train = training_data['Adj Close'].pct_change()
+returns_test = testing_data['Adj Close'].pct_change()
+
+nStocks = len(stocks)
+R_train = returns_train.mean()
+S_train = returns_train.cov()
+
+R_test = returns_test.mean()
+S_test = returns_test.cov()
+```
+
+---
+
+# Generación y Evaluación de Portfolios Aleatorios
+
+```python
+def weights(w):
+    w = np.clip(w, 0, 1)
+    return w / sum(w)
+
+def portfolio_return(w, R):
+    return sum(w * R)
+
+def portfolio_volatility(w, S):
+    return np.dot(w.T, np.dot(S, w))
+
+n_portfolios = 100000
+random_portfolios = []
+
+for _ in range(n_portfolios):
+    w = np.random.rand(nStocks)
+    w = weights(w)
+    ret = portfolio_return(w, R_train)
+    vol = portfolio_volatility(w, S_train)
+    random_portfolios.append((w, ret, vol))
+```
+
+---
+
+# Selección y Prueba de los Mejores 10 Portfolios
+
+```python
+top_10_portfolios = sorted(random_portfolios, key=lambda x: x[1]/x[2], reverse=True)[:10]
+
+results = []
+for w, ret, vol in top_10_portfolios:
+    ret_test = portfolio_return(w, R_test)
+    vol_test = portfolio_volatility(w, S_test)
+    results.append((w, ret_test, vol_test))
+
+def print_non_zero_weights(results):
+    for i, (w, ret, vol) in enumerate(results):
+        print(f"Portfolio {i+1}:")
+        non_zero_indices = np.where(w > 0)[0]
+        for idx in non_zero_indices:
+            print(f"  {stocks[idx]}: {w[idx]:.4f}")
+        print(f"  Expected return: {ret}")
+        print(f"  Expected volatility: {vol}")
+        print()
+
+print_non_zero_weights(results)
+```
+
+---
+
+# Cálculo de la Línea de Mercado de Capitales (CML)
+
+```python
+all_returns = [x[1] for x in random_portfolios]
+all_volatilities = [x[2] for x in random_portfolios]
+
+risk_free_rate = 0.02/365  # Tasa libre de riesgo diaria
+
+best_portfolio = top_10_portfolios[0]
+best_return = best_portfolio[1]
+best_volatility = best_portfolio[2]
+sharpe_ratio = (best_return - risk_free_rate) / best_volatility
+
+cml_x = np.linspace(min(all_volatilities), max(all_volatilities), 100)
+cml_y = risk_free_rate + sharpe_ratio * cml_x
+```
+
+---
+
+![random_optimization](random_optimization.png)
+
+---
+
+## Metodo de Algoritmos Genéticos
+
+---
+# Algoritmos Genéticos (GA)
+
+## ¿Qué es un Algoritmo Genético?
+
+- **Inspiración Biológica:** Los algoritmos genéticos se basan en el proceso de selección natural.
+- **Optimización y Búsqueda:** Se utilizan para resolver problemas de optimización y búsqueda en grandes espacios de soluciones.
+- **Población de Individuos:** Se trabaja con una población de soluciones potenciales (individuos).
+- **Evolución de la Población:** La población evoluciona a través de generaciones, aplicando operadores genéticos.
+
+---
+
+## Componentes de un Algoritmo Genético
+
+1. **Individuos:** Representan posibles soluciones al problema.
+2. **Población:** Conjunto de individuos.
+3. **Función de Fitness:** Evalúa la calidad de cada individuo.
+4. **Selección:** Escoge individuos para reproducirse basándose en su fitness.
+5. **Cruce (Crossover):** Combina dos individuos para producir nuevos individuos (hijos).
+6. **Mutación:** Introduce variaciones aleatorias en los individuos.
+7. **Generaciones:** Iteraciones del proceso de selección, cruce y mutación.
+
+---
+
+# Flujo de un Algoritmo Genético
+
+1. **Inicialización:** Crear una población inicial aleatoria.
+2. **Evaluación:** Calcular el fitness de cada individuo.
+3. **Selección:** Seleccionar los mejores individuos para reproducirse.
+4. **Cruce y Mutación:** Generar nueva población aplicando cruce y mutación.
+5. **Reemplazo:** La nueva población reemplaza a la antigua.
+6. **Iteración:** Repetir los pasos 2-5 hasta que se cumpla un criterio de parada.
+
+---
+# Implementación de la Estrategia de Algoritmo Genético
+
+```python
+creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+creator.create("Individual", list, fitness=creator.FitnessMin)
+
+toolbox = base.Toolbox()
+
+# Generador de atributos para individuos
+toolbox.register("attr_float", random.uniform, 0, 1)
+
+# Inicializadores de estructura
+toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=nStocks)
+toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+```
+
+---
+
+## Registro de la Función de Evaluación y Operadores Genéticos
+
+```python
+# Función de evaluación
+def fitness(w):
+    w = weights(w)
+    ret = portfolio_return(w, R_train)
+    vol = portfolio_volatility(w, S_train)
+    # Calcular la distancia a la CML
+    cml_return = risk_free_rate + sharpe_ratio * vol
+    distance_to_cml = np.abs(ret - cml_return)
+    return distance_to_cml,
+
+toolbox.register("evaluate", fitness)
+
+# Operadores genéticos
+toolbox.register("mate", tools.cxBlend, alpha=0.5)
+toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=0.1, indpb=0.1)
+toolbox.register("select", tools.selTournament, tournsize=3)
+```
+
+---
+
+## Ejecución del Algoritmo Genético
+
+```python
+def run_ga():
+    random.seed(123)
+    pop = toolbox.population(n=300)
+    ngen = 50
+    cxpb = 0.7
+    mutpb = 0.2
+    algorithms.eaSimple(pop, toolbox, cxpb, mutpb, ngen, stats=None, halloffame=None, verbose=True)
+    top_10 = tools.selBest(pop, 10)
+    return top_10
+
+top_10_ga_individuals = run_ga()
+```
+
+---
+
+## Prueba y Visualización de los Resultados del GA
+
+```python
+ga_results = []
+for individual in top_10_ga_individuals:
+    w = weights(individual)
+    ret_test = portfolio_return(w, R_test)
+    vol_test = portfolio_volatility(w, S_test)
+    ga_results.append((w, ret_test, vol_test))
+
+ga_returns = [x[1] for x in ga_results]
+ga_volatilities = [x[2] for x in ga_results]
+
+plt.scatter(ga_volatilities, ga_returns, c='orange', marker='s', s=50, label='GA Portfolios')
+
+plt.title('Riesgo vs Retorno de Portfolios')
+plt.xlabel('Volatilidad (Riesgo)')
+plt.ylabel('Retorno')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+print_non_zero_weights(ga_results)
+```
+
+---
+
+![random_and_ga_optimization](random_and_ga_optimization.png)
+
+
+---
+### Segun GA
+```
+Portfolios
+Portfolio 1:
+  ETH-USD: 0.0307
+  BTC-USD: 0.0307
+  RIGO.BA: 0.0307
+  POLL.BA: 0.0307
+  MOLI.BA: 0.0307
+  Retorno Esperado: 0.0023
+  Volatilidad Esperada: 0.0003
+
+Portfolio 2:
+  ETH-USD: 0.0322
+  YPFD.BA: 0.0322
+  ROSE.BA: 0.0322
+  HARG.BA: 0.0322
+  VALO.BA: 0.0322
+  Retorno Esperado: 0.0020
+  Volatilidad Esperada: 0.0003
+
+Portfolio 3:
+  YPFD.BA: 0.0268
+  MIRG.BA: 0.0268
+  SEMI.BA: 0.0268
+  IRSA.BA: 0.0268
+  INAG.BA: 0.0268
+  Retorno Esperado: 0.0023
+  Volatilidad Esperada: 0.0002
+```
+
+---
+### Segun Optimizacion Numerica Aleatoria
+```
+Top 10 Random Portfolios
+Portfolio 1:
+  CRES.BA: 0.0366
+  PATA.BA: 0.0352
+  DGCU2.BA: 0.0348
+  GBAN.BA: 0.0343
+  VALO.BA: 0.0333
+  Retorno Esperado: 0.0025
+  Volatilidad Esperada: 0.0003
+
+Portfolio 2:
+  CGPA2.BA: 0.0356
+  OEST.BA: 0.0356
+  POLL.BA: 0.0345
+  FERR.BA: 0.0332
+  LONG.BA: 0.0327
+  Retorno Esperado: 0.0025
+  Volatilidad Esperada: 0.0002
+
+Portfolio 3:
+  CADO.BA: 0.0349
+  FIPL.BA: 0.0348
+  HARG.BA: 0.0345
+  CVH.BA: 0.0343
+  PAMP.BA: 0.0341
+  Retorno Esperado: 0.0022
+  Volatilidad Esperada: 0.0003
+```
+
+---
+
+## Relaciones entre Activos y Rendimiento Futuro
+
+- **Optimización de Portfolios:**
+  - Generar portfolios utilizando métodos aleatorios y algoritmos genéticos nos permite explorar diferentes combinaciones de activos.
+  - La evaluación de estos portfolios en términos de retorno y volatilidad ayuda a identificar las mejores combinaciones.
+
+- **Relaciones entre Activos:**
+  - El análisis de los pesos de los activos en los portfolios óptimos proporciona información sobre las relaciones entre diferentes activos.
+  - Identificar los activos que consistentemente aparecen con pesos significativos puede revelar activos líderes y seguidores.
+
+---
+
+- **Rendimiento Futuro:**
+  - Evaluar los portfolios óptimos con datos de prueba (futuros) permite prever su desempeño potencial.
+  - Portfolios que se desempeñan bien en ambos conjuntos de datos (entrenamiento y prueba) pueden ser indicativos de estrategias robustas.
+
+---
 # Introducción a Dynamic Time Warping (DTW)
 
 ---
@@ -224,27 +566,123 @@ No existe evidencia significativa para rechazar la hipótesis nula de que el nú
     DTW(i-1, j-1)
   \end{cases}
   $$
-- **Implementación en Python:**
+
+---
+# Análisis de DTW entre BTC y ETH
+
+## Obtención y Normalización de Datos
 
 ```python
-def dtw(x, y):
-    n, m = len(x), len(y)
-    dtw_matrix = np.zeros((n, m))
+import yfinance as yf
+import numpy as np
+import matplotlib.pyplot as plt
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
 
-    for i in range(n):
-        for j in range(m):
-            cost = abs(x[i] - y[j])
-            if i == 0 and j == 0:
-                dtw_matrix[i, j] = cost
-            elif i == 0:
-                dtw_matrix[i, j] = cost + dtw_matrix[i, j-1]
-            elif j == 0:
-                dtw_matrix[i, j] = cost + dtw_matrix[i-1, j]
-            else:
-                dtw_matrix[i, j] = cost + min(dtw_matrix[i-1, j], dtw_matrix[i, j-1], dtw_matrix[i-1, j-1])
+# Obtener datos de precios de Bitcoin y Ethereum desde Yahoo Finance
+btc_data = yf.download("BTC-USD", start="2024-01-01", end="2024-07-31")
+eth_data = yf.download("ETH-USD", start="2024-01-01", end="2024-07-31")
 
-    return dtw_matrix[-1, -1]
+# Calcular precios de cierre diarios
+btc_prices = btc_data['Close']
+eth_prices = eth_data['Close']
+
+# Normalizar los precios
+btc_aligned = btc_prices / np.mean(btc_prices)
+eth_aligned = eth_prices / np.mean(eth_prices)
 ```
+
+---
+
+## Cálculo de DTW y Gráficos
+
+```python
+btc_array = np.array(list(enumerate(btc_aligned, start=1)))
+eth_array = np.array(list(enumerate(eth_aligned, start=1)))
+
+# Calcular DTW
+distance, path = fastdtw(btc_array, eth_array, dist=euclidean)
+
+# Imprimir la distancia DTW
+print(f"Distancia DTW: {distance}")
+
+# Graficar la alineación DTW
+fig, ax = plt.subplots()
+for (map_btc, map_eth) in path:
+    ax.plot([btc_aligned.index[map_btc], eth_aligned.index[map_eth]], [btc_aligned[map_btc], eth_aligned[map_eth]], color='gray')
+ax.plot(btc_aligned, label='BTC', color='steelblue')
+ax.plot(eth_aligned, label='ETH', color='orange')
+ax.legend()
+plt.title('DTW entre BTC y ETH')
+plt.show()
+
+# Graficar las series de tiempo originales
+fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+ax1.plot(btc_aligned, label='BTC', color='steelblue')
+ax1.set_title('Precio Bitcoin (BTC)')
+ax1.set_ylabel('Precio Normalizado')
+
+ax2.plot(eth_aligned, label='ETH', color='orange')
+ax2.set_title('Precio Ethereum (ETH)')
+ax2.set_ylabel('Precio Normalizado')
+ax2.set_xlabel('Fecha')
+
+plt.tight_layout()
+plt.show()
+```
+---
+
+![dtw_btc_eth](dtw_btc_eth.png)
+
+---
+
+![btc_eth](btc_eth.png)
+
+---
+## Analizando distancias entre series temporales
+```python
+for i in range(n):
+    for j in range(i+1, n):
+        # Cast the normalized data to arrays with enumerated indices
+        asset_i_array = np.array(list(enumerate(normalized_data.iloc[:, i], start=1)))
+        asset_j_array = np.array(list(enumerate(normalized_data.iloc[:, j], start=1)))
+        # Perform DTW
+        try:
+            distance, _ = fastdtw(asset_i_array, asset_j_array, dist=euclidean)
+            distance_matrix[i, j] = distance
+            distance_matrix[j, i] = distance
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            distance_matrix[i, j] = np.nan
+            distance_matrix[j, i] = np.nan
+        print("Processed pair ({}, {})".format(stocks[i], stocks[j]))
+```
+
+---
+## Algunos Activos Argentinos
+|         |   AGRO.BA |   ALUA.BA |   AUSO.BA |   BBAR.BA |   BHIP.BA |
+|:--------|----------:|----------:|----------:|----------:|----------:|
+| AGRO.BA |      0    |   2572.97 |  3341.41  |  2897.71  |   4179.12 |
+| ALUA.BA |   2572.97 |      0    |  1676.47  |  1713.26  |   3067.97 |
+| AUSO.BA |   3341.41 |   1676.47 |     0     |   992.444 |   1802.23 |
+| BBAR.BA |   2897.71 |   1713.26 |   992.444 |     0     |   1582.03 |
+| BHIP.BA |   4179.12 |   3067.97 |  1802.23  |  1582.03  |      0    |
+| BMA.BA  |   3267.91 |   1972.56 |  1018.87  |   604.273 |   1236.2  |
+| BPAT.BA |   3058.32 |   2073.25 |  1315.02  |  1194.4   |   1801.43 |
+| BRIO.BA |   3515.73 |   2612.08 |  1846.92  |  1236.98  |   1227.12 |
+| SUPV.BA |   3051.67 |   4807.59 |  4864.2   |  4173.47  |   4713.8  |
+
+---
+![matriz_de_distancia](matriz_de_distancia.png)
+---
+### Analizando series Proximas
+
+![YPF_BTC](YPF_BTC.png)
+
+---
+### Analizando series Distantes
+
+![SAMI_SUPV](SAMI_SUPV.png)
 
 ---
 
@@ -266,8 +704,6 @@ def dtw(x, y):
 
 - **Uso de DTW:** Útil para comparar series temporales con desplazamientos y deformaciones temporales.
 - **Ventajas sobre la Distancia Euclidiana:** Proporciona una evaluación de similitud más precisa para series temporales.
-
----
 
 ---
 ## Análisis de Transformada Wavelet
