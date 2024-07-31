@@ -748,6 +748,7 @@ Espacio de Parámetros R segun Datos Sinteticos
 | Bootstrap | -14778   |         1231  |         1.446  |
 | Sintetico | -14778.6 |      1231.50  |         3.303  |
 
+
 - Si bien los resultados son similares, el valor sharpe es más alto en el caso de los datos sintéticos, lo que sugiere una mayor variabilidad en los resultados.
 
 --- 
