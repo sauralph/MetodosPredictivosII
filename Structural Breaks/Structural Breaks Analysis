@@ -82,6 +82,19 @@ math: katex
 ---
 ## Prueba de Chow
 
+$$
+F = \frac{(\text{SSE}_R - \text{SSE}_U) / k}{\text{SSE}_U / (n_1 + n_2 - 2k)}
+$$
+
+- **$\text{SSE}_R$**: Suma de los errores al cuadrado del modelo restringido (sin cambio).
+- **$\text{SSE}_U$**: Suma de los errores al cuadrado del modelo no restringido (con cambio).
+- **$k$**: Número de parámetros estimados en el modelo.
+- **$n_1, n_2$**: Número de observaciones en los dos subperíodos.
+
+
+---
+## Prueba de Chow
+
 - **Comparación**:
   - Se comparan los modelos de regresión utilizando la estadística F para determinar si los coeficientes son significativamente diferentes entre los periodos.
 
@@ -101,6 +114,32 @@ math: katex
 ---
 ## Prueba CUSUM
 
+### Fórmula del CUSUM
+
+$$
+S_t = \sum_{i=1}^{t} e_i = e_1 + e_2 + \dots + e_t
+$$
+
+- **$S_t$**: Suma acumulativa de los residuos hasta el tiempo $t$.
+- **$e_i$**: Residuo del modelo en el tiempo $i$.
+
+---
+
+## Prueba CUSUM
+
+
+### Detección de Cambios
+
+$$
+\text{CUSUM} = \max_t \left| S_t - \frac{t}{n} S_n \right|
+$$
+
+- **$\frac{t}{n} S_n$**: Ajuste de la suma acumulativa para tener en cuenta el tamaño de la muestra.
+- Un valor alto de CUSUM indica un cambio estructural en la serie.
+
+---
+
+## Prueba CUSUM
 
 ### ¿Cómo funciona?
 
@@ -133,6 +172,33 @@ math: katex
 - **Aplicación**: Utilizada para encontrar varios puntos de cambio en la media, la varianza o ambos.
 
 ---
+## Prueba Bai-Perron
+
+$$
+y_t = x_t'\beta_j + u_t, \quad t = T_{j-1} + 1, \dots, T_j
+$$
+
+- **$y_t$**: Variable dependiente en el tiempo $t$.
+- **$x_t$**: Vector de regresores.
+- **$\beta_j$**: Coeficientes del modelo para el segmento $j$.
+- **$u_t$**: Término de error.
+
+---
+
+## Prueba Bai-Perron
+
+
+$$
+\min_{T_1, \dots, T_{m}} \sum_{j=1}^{m+1} \sum_{t=T_{j-1}+1}^{T_j} (y_t - x_t'\hat{\beta}_j)^2
+$$
+
+- **$T_j$**: Puntos de quiebre que dividen la serie en $m+1$ segmentos.
+- **$\hat{\beta}_j$**: Estimación de los coeficientes en cada segmento.
+- El objetivo es minimizar la suma de los errores cuadrados dentro de cada segmento.
+
+
+---
+
 ## Prueba Bai-Perron
 
 ### ¿Cómo funciona?
