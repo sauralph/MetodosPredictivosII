@@ -54,6 +54,13 @@ sim_mean <- c(rnorm(100, 0, 1),
 plot.ts(sim_mean)
 ```
 
+---
+
+![diff_mean.png](diff_mean.png)
+
+---
+
+
 - **sim_mean**: Serie temporal simulada con cambios en la media en diferentes segmentos.
 - **plot.ts(sim_mean)**: Grafica la serie temporal simulada.
 
@@ -134,6 +141,11 @@ sim_var <- c(rnorm(100, 0, 1),
              rnorm(120, 0, 0.5))
 plot.ts(sim_var)
 ```
+---
+
+![diff_var.png](diff_var.png)
+
+---
 
 - **sim_var**: Serie temporal simulada con cambios en la varianza.
 
@@ -166,7 +178,11 @@ plot.ts(sim_mv)
 mv_pelt <- cpt.meanvar(sim_mv, method = "PELT")
 plot(mv_pelt)
 ```
+---
 
+![diff_mean_var.png](diff_mean_var.png)
+
+---
 - **sim_mv**: Serie temporal simulada con cambios tanto en la media como en la varianza.
 - **cpt.meanvar**: Detección de cambios en la media y varianza con PELT.
 
@@ -191,12 +207,15 @@ plot.ts(y)
 
 - **x1, x2, x3**: Series simuladas con modelos ARIMA.
 - **y**: Serie concatenada que combina las tres series ARIMA.
+---
+
+![diff_arima.png](diff_arima.png)
 
 ---
 
 ## Detección de Quiebres Estructurales
 
-### QLR (Prueba de Cuantiles)
+### QLR (Prueba de Chow)
 
 ```r
 dat <- tibble(ylag0 = y,
@@ -237,6 +256,15 @@ plot(cusum)
 ---
 
 ![fig9.png](fig9.png)
+
+---
+
+![fig10.png](fig10.png)
+
+---
+
+- Se pueden ver en el expectro de potencias que los componentes AR son visibles en los harmonicos superiores
+- Mientras que el componente MA es visible en los harmonicos inferiores. 
 
 ---
 
