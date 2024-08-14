@@ -540,7 +540,7 @@ Portfolio 3:
 - **Distancia Euclidiana:** Calcula la suma de las distancias entre puntos con el mismo índice temporal.
 - **Dynamic Time Warping (DTW):** Busca la alineación temporal que minimiza la distancia entre series.
 
-![dtw_vs_euclidean](dtw_vs_euclidean.png)
+![dtw_vs_euc](dtw_vs_euc.png)
 
 ---
 
@@ -567,6 +567,10 @@ Portfolio 3:
     DTW(i-1, j-1)
   \end{cases}
   $$
+
+---
+
+![dtw_path_matrix](dtw_path_matrix.png)
 
 ---
 # Análisis de DTW entre BTC y ETH
@@ -675,7 +679,9 @@ for i in range(n):
 
 ---
 ![matriz_de_distancia](matriz_de_distancia.png)
+
 ---
+
 ### Analizando series Proximas
 
 ![YPF_BTC](YPF_BTC.png)

@@ -1,0 +1,89 @@
+---
+marp: true
+theme: default
+class: invert
+paginate: true
+math: katex
+---
+
+
+# Análisis de Quiebres Estructurales en Series Temporales
+
+---
+
+## ¿Qué es un quiebre estructural?
+
+- Un quiebre estructural ocurre cuando las propiedades estadísticas de una serie temporal cambian significativamente en un punto específico.
+- Estos cambios pueden afectar la media, la varianza u otras características de la serie.
+
+---
+
+## Causas de quiebres estructurales
+
+- Cambios en la política económica
+- Innovaciones tecnológicas
+- Crisis financieras
+- Eventos externos significativos
+
+---
+
+## Conceptos Clave
+
+### 1. Puntos de Quiebre
+
+- Son los momentos específicos en los que ocurre el quiebre estructural.
+- Detectarlos con precisión es crucial para un modelado y pronóstico adecuado.
+
+---
+
+## Conceptos Clave
+
+### 2. Regímenes Pre- y Post-Quiebre
+
+- Después de identificar un quiebre, la serie se divide en distintos regímenes o periodos.
+- Cada régimen puede requerir un enfoque de modelado diferente.
+
+---
+
+## Conceptos Clave
+
+### 3. Pruebas para Quiebres Estructurales
+
+- Pruebas comunes:
+  - Prueba de Chow
+  - Prueba CUSUM
+  - Prueba Bai-Perron
+- Estas pruebas determinan si y cuándo ha ocurrido un quiebre estructural.
+
+---
+
+## Conceptos Clave
+
+### 4. Implicaciones para el Modelado
+
+- Ignorar los quiebres estructurales puede llevar a un mal desempeño del modelo.
+- Los quiebres violan las suposiciones de muchos modelos de series temporales, como la estacionariedad.
+
+---
+
+## Conceptos Clave
+
+### 5. Múltiples Quiebres
+
+- Una serie temporal puede experimentar múltiples quiebres.
+- Técnicas como la prueba Bai-Perron permiten detectar múltiples puntos de quiebre.
+
+---
+
+## Aplicaciones Prácticas
+
+- **Series Temporales Económicas**: Quiebres comunes por cambios de política, crisis globales.
+- **Series Financieras**: Quiebres por cambios en regulaciones o eventos de mercado.
+- **Datos Climáticos**: Quiebres debido a fenómenos naturales o actividades humanas.
+
+---
+
+## Conclusión
+
+- El análisis de quiebres estructurales permite entender mejor la dinámica de la serie temporal.
+- Adaptar los modelos para reflejar los cambios es esencial para mejorar la precisión de las previsiones.

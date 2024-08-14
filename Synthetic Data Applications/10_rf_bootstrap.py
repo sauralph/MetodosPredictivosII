@@ -63,16 +63,13 @@ for params in ParameterGrid(param_grid):
     for boot_features, boot_labels in zip(bootstrap_features, bootstrap_labels):
         rf = RandomForestClassifier(**params, random_state=42)
         rf.fit(boot_features, boot_labels)
-        
         # Predict buy signals
         boot_predictions = rf.predict(boot_features)
-        
         # Calculate returns
         boot_prices = prices.loc[boot_features.index]
         returns_rf = (boot_prices.shift(-1) - boot_prices)[boot_predictions == 1] / boot_prices[boot_predictions == 1]
         cumulative_return_rf = np.prod(1 + returns_rf) - 1
         cumulative_returns.append(cumulative_return_rf)
-    
     avg_cumulative_return = np.mean(cumulative_returns)
     if avg_cumulative_return > best_return:
         best_return = avg_cumulative_return
