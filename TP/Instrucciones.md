@@ -3,7 +3,7 @@
 
 Docente: Ezequiel Nuske
 
-Deadline: 15/09/2024
+Deadline: 04/09/2024
 
 ## Ejercicio de Simulación y Estrategia de Trading
 
