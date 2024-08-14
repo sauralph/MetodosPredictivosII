@@ -600,6 +600,10 @@ plot.ts(btc_prices)
 
 ---
 
+![fig11.png](fig11.png)
+
+---
+
 ## Prueba CUSUM
 
 ```r
@@ -610,6 +614,10 @@ plot(cusum_test, main = "Prueba CUSUM en Precios de Bitcoin")
 - **CUSUM (Cumulative Sum Control Chart)**: Detecta cambios graduales en la media de la serie temporal.
 - **efp()**: Realiza la prueba CUSUM para detectar cambios en la estructura de la regresión.
 - **plot()**: Grafica los resultados de la prueba.
+
+---
+
+![fig12.png](fig12.png)
 
 ---
 
@@ -643,6 +651,10 @@ plot(bp_test, main = "Prueba Bai-Perron en Precios de Bitcoin")
 
 ---
 
+![fig13.png](fig13.png)
+
+---
+
 ## Análisis Wavelet
 
 ```r
@@ -663,6 +675,10 @@ wt.image(wavelet_analysis,
 
 ---
 
+![fig14.png](fig14.png)
+
+---
+
 ## Detección de Puntos de Quiebre con `cpt.meanvar`
 
 ```r
@@ -680,6 +696,8 @@ abline(v=c(which(index(btc_prices)=="2016-07-09"),
 - **ts.plot()**: Grafica los precios de Bitcoin junto con los puntos de quiebre identificados.
 
 ---
+
+![fig15.png](fig15.png)
 
 ---
 ## Conclusión
