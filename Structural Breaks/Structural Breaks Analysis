@@ -57,9 +57,118 @@ math: katex
 
 ---
 
+# Pruebas de Cambio Estructural en Series Temporales
+
+---
+
+## Prueba de Chow
+
+### ¿Qué es la Prueba de Chow?
+
+- **Objetivo**: Detectar cambios estructurales en una serie temporal, específicamente en la relación entre variables en diferentes subperíodos.
+- **Aplicación**: Se usa en análisis de regresión para comparar dos modelos de regresión en diferentes periodos de tiempo.
+
+---
+## Prueba de Chow
+
+### ¿Cómo funciona?
+
+- **División del Conjunto de Datos**:
+  - Se divide la serie temporal en dos o más subperíodos.
+  
+- **Estima Modelos de Regresión**:
+  - Se estima un modelo de regresión para cada subperíodo.
+
+---
+## Prueba de Chow
+
+- **Comparación**:
+  - Se comparan los modelos de regresión utilizando la estadística F para determinar si los coeficientes son significativamente diferentes entre los periodos.
+
+### Limitaciones
+
+- La Prueba de Chow solo puede detectar un único punto de quiebre a la vez.
+
+---
+
+## Prueba CUSUM
+
+### ¿Qué es la Prueba CUSUM?
+
+- **CUSUM**: Cumulative Sum Control Chart.
+- **Objetivo**: Detectar cambios graduales en la media de una serie temporal.
+
+---
+## Prueba CUSUM
+
+
+### ¿Cómo funciona?
+
+- **Cálculo de la Suma Acumulativa**:
+  - Se calcula la suma acumulativa de los residuos del modelo de regresión.
+  
+- **Monitorización**:
+  - Se monitorea el comportamiento de esta suma acumulativa para identificar desviaciones significativas de la media.
+
+---
+## Prueba CUSUM
+
+  
+- **Identificación de Cambios**:
+  - Si la suma acumulativa excede ciertos límites, indica un cambio en la estructura del modelo.
+
+---
+## Prueba CUSUM
+
+### Ventajas
+
+- Detecta cambios pequeños y graduales que podrían no ser evidentes con otras pruebas.
+
+---
+## Prueba Bai-Perron
+
+### ¿Qué es la Prueba Bai-Perron?
+
+- **Objetivo**: Identificar múltiples quiebres estructurales en una serie temporal.
+- **Aplicación**: Utilizada para encontrar varios puntos de cambio en la media, la varianza o ambos.
+
+---
+## Prueba Bai-Perron
+
+### ¿Cómo funciona?
+
+- **Segmentación**:
+  - La serie temporal se divide en segmentos homogéneos donde no hay cambios estructurales.
+  
+- **Estimación de Breakpoints**:
+  - La prueba estima los puntos de quiebre donde ocurren los cambios más significativos.
+
+---
+## Prueba Bai-Perron
+
+- **Modelo de Penalización**:
+  - Utiliza un modelo de penalización para determinar el número óptimo de puntos de quiebre.
+
+### Ventajas
+
+- Permite detectar múltiples quiebres estructurales simultáneamente.
+- Es robusta y aplicable a una amplia variedad de series temporales.
+
+---
+
+## Comparación de las Pruebas
+
+### Cuándo usar cada prueba:
+
+- **Prueba de Chow**: Ideal para detectar un único cambio estructural entre dos subperíodos.
+- **Prueba CUSUM**: Mejor para detectar cambios graduales en la media.
+- **Prueba Bai-Perron**: Óptima para identificar múltiples quiebres estructurales en series complejas.
+
+---
+
 ## Conceptos Clave
 
-### 4. Implicaciones para el Modelado
+### Implicaciones para el Modelado
 
 - Ignorar los quiebres estructurales puede llevar a un mal desempeño del modelo.
 - Los quiebres violan las suposiciones de muchos modelos de series temporales, como la estacionariedad.
@@ -68,18 +177,14 @@ math: katex
 
 ## Conceptos Clave
 
-### 5. Múltiples Quiebres
+### Múltiples Quiebres
 
 - Una serie temporal puede experimentar múltiples quiebres.
 - Técnicas como la prueba Bai-Perron permiten detectar múltiples puntos de quiebre.
 
 ---
 
-## Aplicaciones Prácticas
 
-- **Series Temporales Económicas**: Quiebres comunes por cambios de política, crisis globales.
-- **Series Financieras**: Quiebres por cambios en regulaciones o eventos de mercado.
-- **Datos Climáticos**: Quiebres debido a fenómenos naturales o actividades humanas.
 
 ---
 
