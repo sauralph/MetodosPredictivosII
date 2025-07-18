@@ -354,14 +354,20 @@ plt.show()
 
 
 ---
+
 # Resultados
 - **Sharpe Ratio:** 0.62
 - **Retorno Promedio:** 50.78%
+
 ---
+
 - **Distribución de PnL:**
   ![Distribución de PnL](PnL_distribution.png)
+
 ---
+
 # Simulación de Monte Carlo y Precio de Opciones de Black-Scholes
+
 ---
 
 ## Movimiento Browniano Geométrico (GBM)
@@ -426,7 +432,6 @@ $$ dx_t = \phi (\mu - x_t) \, dt + \sigma \, dW_t $$
   - Modela reversión a la media.
   - Adecuado para fenómenos donde hay una tendencia natural a retornar a un nivel promedio.
 
-
 ---
 
 ## Discretización del GBM
@@ -485,15 +490,6 @@ sigma = 0.2   # Volatilidad de la acción
 M = 100       # Número de pasos de tiempo
 N = 10000     # Número de trayectorias simuladas
 ```
-
-- **S0:** Precio inicial de la acción.
-- **K:** Precio de ejercicio.
-- **T:** Tiempo hasta el vencimiento.
-- **r:** Tasa de interés libre de riesgo.
-- **sigma:** Volatilidad.
-- **M:** Pasos de tiempo.
-- **N:** Trayectorias simuladas.
-
 ---
 
 ## Simular Trayectorias de Precios de Acciones
@@ -609,6 +605,26 @@ plt.fill_between(range(M+1), S_max, S_min, color='gray', alpha=0.5, label='Min-M
 - Los precios de opciones calculados mediante Monte Carlo y Black-Scholes son muy cercanos (\$7.99 vs \$8.02), demostrando la eficacia de ambos métodos para valorar opciones.
 - **GBM** es adecuado para modelar precios de acciones debido a su naturaleza no estacionaria y crecimiento exponencial.
 - **O-U** es más apropiado para variables que tienden a revertir a una media, como las tasas de interés.
+
+---
+
+## ¿Por qué usar un Proceso O-U?
+
+- **Reversión a la media** es una característica observada en:
+  - **Spreads de estrategias de pares**
+  - **Tasas de interés (modelo de Vasicek)**
+  - **Diferenciales de tasas o commodities**
+- Estrategias que apuestan a la reversión (mean-reversion trading) se benefician de este modelo.
+- Contrasta con activos de crecimiento (acciones, cripto), que pueden seguir procesos tipo GBM.
+
+---
+
+## ¿Por qué no usar GBM desde el inicio?
+
+- GBM **no revierte a una media**, por lo que:
+  - No captura oportunidades de arbitraje estadístico.
+  - Es más adecuado para modelar precios sin ancla.
+- O-U permite detectar zonas de **sobrecompra/sobreventa relativa al promedio.**
 
 ---
 
@@ -753,6 +769,26 @@ Espacio de Parámetros R segun Datos Sinteticos
 
 --- 
 
+## Análisis de sensibilidad de la estrategia
+
+- ¿Qué pasa si subestimamos $\sigma$ o $\phi$?
+- ¿La estrategia es robusta ante errores en la estimación?
+- ¿Qué tan estable es el **Sharpe Ratio** frente a cambios leves en parámetros?
+
+---
+
+## Ejercicio propuesto
+
+- Simular el mismo conjunto de caminos con:
+  - $\phi \pm 10\%$
+  - $\sigma \pm 10\%$
+- Comparar el cambio en el Sharpe Ratio.
+- Visualizar cómo varía el óptimo en el espacio de $(\pi, \bar{\pi})$.
+
+*Esto da una medida de **estabilidad y robustez** de la estrategia.*
+
+---
+
 ## Conclusión
 
 - **Bootstrapping:** Permite generar múltiples muestras de datos para probar la robustez de un modelo.
@@ -761,6 +797,24 @@ Espacio de Parámetros R segun Datos Sinteticos
 
 ---
 
+## ¿Qué riesgos tienen los datos sintéticos?
+
+- **Suposiciones fuertes** del modelo:
+  - Normalidad, linealidad, independencia temporal.
+- **No capturan eventos extremos** (colas gruesas, crashes).
+- **Pérdida de estructura temporal compleja**:
+  - Autocorrelaciones no lineales.
+  - Regímenes de volatilidad (GARCH-like behavior).
+- Pueden inducir **falsa robustez** si el modelo no generaliza.
+
+---
+
+## ¿Cómo mitigar estos riesgos?
+
+- Validar con múltiples métodos (GBM, O-U, bootstrap).
+- Complementar con datos reales y eventos históricos.
+- Considerar simulaciones *regime-switching* o *copulas* si el foco es multiactivo.
+- Evaluar sensibilidad de resultados a los parámetros del modelo.
 
 ---
 # Referencias
