@@ -90,9 +90,9 @@ cpts(v_pelt)
 # Change in Mean and Variance ---------------------------------------------
 
 sim_mv <- c(rnorm(100, 0, 1),
-            rnorm(50, 1, 2),
-            rnorm(90, 0, 1),
-            rnorm(120, -0.8, 0.5))
+            rnorm(100, 1, 2),
+            rnorm(100, 0, 1),
+            rnorm(100, -0.8, 0.5))
 
 png("diff_mean_var.png",width = 1024, height = 768, units = "px",res = 300,
     pointsize = 8)

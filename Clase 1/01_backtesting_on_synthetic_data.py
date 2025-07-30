@@ -1,14 +1,78 @@
 import numpy as np
 import pandas as pd
-import yfinance as yf
+import requests
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import LinearRegression
+from datetime import datetime
 
-# Step 1: Get Bitcoin historical data from Yahoo Finance
-btc_data = yf.download("BTC-USD", start="2020-01-01", end=pd.Timestamp.today().strftime('%Y-%m-%d'))
-prices = btc_data['Close']
+# Step 1: Get Bitcoin historical data from Binance API
+def get_btc_data(start_date="2020-01-01", end_date=None):
+    """
+    Download Bitcoin historical data from Binance API (completely free, no API key required)
+    """
+    if end_date is None:
+        end_date = datetime.now().strftime('%Y-%m-%d')
+    
+    # Convert dates to millisecond timestamps (Binance format)
+    start_timestamp = int(pd.to_datetime(start_date).timestamp() * 1000)
+    end_timestamp = int(pd.to_datetime(end_date).timestamp() * 1000)
+    
+    # Binance API endpoint for historical klines (candlestick data)
+    url = "https://api.binance.com/api/v3/klines"
+    params = {
+        'symbol': 'BTCUSDT',
+        'interval': '1d',  # Daily data
+        'startTime': start_timestamp,
+        'endTime': end_timestamp,
+        'limit': 1000  # Max 1000 records per request
+    }
+    
+    all_data = []
+    
+    try:
+        while start_timestamp < end_timestamp:
+            params['startTime'] = start_timestamp
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+            
+            if not data:
+                break
+                
+            all_data.extend(data)
+            
+            # Update start_timestamp for next batch (add ~1000 days in milliseconds)
+            start_timestamp = data[-1][0] + 86400000  # Add 1 day in milliseconds
+            
+            # Break if we got less than 1000 records (last batch)
+            if len(data) < 1000:
+                break
+        
+        # Convert to DataFrame
+        # Binance kline format: [timestamp, open, high, low, close, volume, ...]
+        df = pd.DataFrame(all_data, columns=[
+            'timestamp', 'open', 'high', 'low', 'close', 'volume',
+            'close_time', 'quote_volume', 'count', 'taker_buy_volume',
+            'taker_buy_quote_volume', 'ignore'
+        ])
+        
+        # Convert timestamp and set as index
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
+        
+        # Convert close price to float and return
+        df['close'] = df['close'].astype(float)
+        return df['close']
+    
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching data: {e}")
+        return None
+
+# Download Bitcoin data
+btc_prices = get_btc_data(start_date="2020-01-01")
+prices = btc_prices
 
 # Interpolate NA values
 prices = prices.interpolate()
