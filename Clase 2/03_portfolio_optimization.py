@@ -31,8 +31,8 @@ data.interpolate(method='linear', inplace=True)
 training_data = data[:'2023-12-31']
 testing_data = data['2024-01-01':]
 
-returns_train = training_data['Adj Close'].pct_change()
-returns_test = testing_data['Adj Close'].pct_change()
+returns_train = training_data['Close'].pct_change()
+returns_test = testing_data['Close'].pct_change()
 
 nStocks = len(stocks)
 R_train = returns_train.mean()
